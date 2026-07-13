@@ -4,13 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestionnaire de budget de Faniry</title>
-  <!-- Firebase SDK (App + Database + Auth) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
-    /* --- Votre style exact (inchangé) --- */
     :root {
       --bg: #0a0a0a;
       --surface: #151515;
@@ -191,23 +189,22 @@
     <header class="header">
       <div><h1 class="header__title">Gestionnaire de budget de Faniry</h1></div>
       <div class="header__actions">
-        <span class="auth-status" id="authStatus">⏳ Connexion...</span>
-        <button class="btn btn--login" id="loginBtn" onclick="seConnecter()">🔐 Se connecter</button>
-        <button class="btn btn--login" id="logoutBtn" style="display:none;" onclick="seDeconnecter()">🚪 Se déconnecter</button>
-        <button class="btn btn--export" onclick="exportToExcel()">⤓ Export Excel</button>
-        <button class="btn btn--import" onclick="document.getElementById('jsonFileInput').click()">⬆ Import JSON</button>
+        <span class="auth-status" id="authStatus">Authentification en cours...</span>
+        <button class="btn btn--login" id="loginBtn" onclick="seConnecter()">Connexion</button>
+        <button class="btn btn--login" id="logoutBtn" style="display:none;" onclick="seDeconnecter()">Deconnexion</button>
+        <button class="btn btn--export" onclick="exportToExcel()">Export Excel</button>
+        <button class="btn btn--import" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
         <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(event)" />
-        <button class="btn" onclick="exportToJSON()">⤓ Export JSON</button>
+        <button class="btn" onclick="exportToJSON()">Export JSON</button>
         <button class="theme-toggle" onclick="toggleTheme()">
           <span id="themeIcon">☽</span> <span id="themeLabel">Sombre</span>
         </button>
       </div>
     </header>
 
-    <!-- Overlay de connexion -->
     <div class="login-overlay" id="loginOverlay">
       <div class="login-box">
-        <h2>🔐 Connexion</h2>
+        <h2>Connexion securisee</h2>
         <div class="form-group">
           <label>Email</label>
           <input type="email" class="input" id="loginEmail" placeholder="votre@email.fr" />
@@ -224,59 +221,56 @@
     <section class="dashboard" id="dashboard">
       <div class="card card--solde"><p class="card__label">Solde actuel</p><p class="card__amount" id="cardSolde">0,00 €</p></div>
       <div class="card card--revenu"><p class="card__label">Revenus totaux</p><p class="card__amount" id="cardRevenus">0,00 €</p></div>
-      <div class="card card--depense"><p class="card__label">Dépenses totales</p><p class="card__amount" id="cardDepenses">0,00 €</p></div>
+      <div class="card card--depense"><p class="card__label">Depenses totales</p><p class="card__amount" id="cardDepenses">0,00 €</p></div>
       <div class="card card--dette"><p class="card__label">Dette restante</p><p class="card__amount" id="cardDettes">0,00 €</p></div>
     </section>
 
     <div class="tabs">
       <button class="tab-btn tab-btn--active" onclick="switchTab('revenus')" id="tabBtnRevenus">Revenus</button>
-      <button class="tab-btn" onclick="switchTab('depenses')" id="tabBtnDepenses">Dépenses</button>
+      <button class="tab-btn" onclick="switchTab('depenses')" id="tabBtnDepenses">Depenses</button>
       <button class="tab-btn" onclick="switchTab('dettes')" id="tabBtnDettes">Dette Garant</button>
     </div>
 
-    <!-- REVENUS -->
     <section class="tab-panel tab-panel--active" id="panelRevenus">
       <div class="form-row">
         <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Salaire stage, CAF..."></div>
         <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group"><label>Catégorie</label><input type="text" class="input" id="revCategorie" placeholder="Ex: CAF, Salaire..."></div>
+        <div class="form-group"><label>Categorie</label><input type="text" class="input" id="revCategorie" placeholder="Ex: CAF, Salaire..."></div>
         <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
-        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterRevenu()">+ Ajouter</button></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterRevenu()">Ajouter</button></div>
       </div>
       <div class="filter-bar">
-        <select id="filtreRevenuCat" class="select"><option value="">Toutes les catégories</option></select>
+        <select id="filtreRevenuCat" class="select"><option value="">Toutes les categories</option></select>
         <button class="btn btn--sm" onclick="filtrerTable('revenus')">Filtrer</button>
-        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreRevenuCat').value=''; filtrerTable('revenus');">✕</button>
+        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreRevenuCat').value=''; filtrerTable('revenus');">Reinitialiser</button>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableRevenus"></tbody></table></div>
+      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableRevenus"></tbody></table></div>
     </section>
 
-    <!-- DEPENSES -->
     <section class="tab-panel" id="panelDepenses">
       <div class="form-row">
         <div class="form-group"><label>Description</label><input type="text" class="input" id="depDesc" placeholder="Ex: Loyer, Courses..."></div>
         <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="depMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group"><label>Catégorie</label><input type="text" class="input" id="depCategorie" placeholder="Ex: Alimentation..."></div>
+        <div class="form-group"><label>Categorie</label><input type="text" class="input" id="depCategorie" placeholder="Ex: Alimentation..."></div>
         <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="depDate"></div>
-        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterDepense()">+ Ajouter</button></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterDepense()">Ajouter</button></div>
       </div>
       <div class="filter-bar">
-        <select id="filtreDepenseCat" class="select"><option value="">Toutes les catégories</option></select>
+        <select id="filtreDepenseCat" class="select"><option value="">Toutes les categories</option></select>
         <button class="btn btn--sm" onclick="filtrerTable('depenses')">Filtrer</button>
-        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreDepenseCat').value=''; filtrerTable('depenses');">✕</button>
+        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreDepenseCat').value=''; filtrerTable('depenses');">Reinitialiser</button>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableDepenses"></tbody></table></div>
+      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableDepenses"></tbody></table></div>
     </section>
 
-    <!-- DETTES -->
     <section class="tab-panel" id="panelDettes">
       <div class="form-row">
-        <div class="form-group"><label>Motif du prêt</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarité..."></div>
+        <div class="form-group"><label>Motif du pret</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarite..."></div>
         <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group" style="max-width:150px;"><label>Déjà remboursé (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="0.01" min="0" value="0"></div>
-        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterPret()">+ Ajouter prêt</button></div>
+        <div class="form-group" style="max-width:150px;"><label>Deja rembourse (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="0.01" min="0" value="0"></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterPret()">Ajouter pret</button></div>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Motif</th><th>Total</th><th>Remboursé</th><th>Restant</th><th>Progression</th><th>Action</th></tr></thead><tbody id="tablePrets"></tbody></table></div>
+      <div class="table-wrapper"><table><thead><tr><th>Motif</th><th>Total</th><th>Rembourse</th><th>Restant</th><th>Progression</th><th>Action</th></tr></thead><tbody id="tablePrets"></tbody></table></div>
       <div class="table-wrapper" style="margin-top:1rem;">
         <table><thead><tr><th colspan="5">Progression globale</th></tr></thead>
           <tbody><tr class="total-row">
@@ -290,13 +284,11 @@
       </div>
     </section>
 
-    <footer class="footer">© 2026 • Gestionnaire de budget de Faniry • Données synchronisées</footer>
+    <footer class="footer">© 2026 • Gestionnaire de budget de Faniry • Donnees synchronisees</footer>
   </div>
 
   <script>
-    // ============================================================
-    // 1. CONFIGURATION FIREBASE
-    // ============================================================
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA43XhbbuyH9T4pLplJe9mtiS3a9nQ4RFA",
       authDomain: "budget-faniry-version-1.firebaseapp.com",
@@ -311,24 +303,20 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // ============================================================
-    // 2. ÉTAT LOCAL
-    // ============================================================
+    // State
     let revenus = [];
     let depenses = [];
     let prets = [];
     let currentTheme = 'dark';
-    let user = null; // utilisateur authentifié
+    let user = null;
+    let listenersStarted = false;
 
-    // Références
     const refRevenus = db.ref('revenus');
     const refDepenses = db.ref('depenses');
     const refPrets = db.ref('prets');
     const refTheme = db.ref('config/theme');
 
-    // ============================================================
-    // 3. FONCTIONS UTILITAIRES
-    // ============================================================
+    // Utilities
     function formatMontant(m) { return parseFloat(m).toFixed(2).replace('.', ',') + ' €'; }
     function formatDate(d) {
       if (!d) return '—';
@@ -345,9 +333,7 @@
       return div.innerHTML;
     }
 
-    // ============================================================
-    // 4. GESTION DE L'AUTHENTIFICATION
-    // ============================================================
+    // Authentication
     function updateAuthUI() {
       const status = document.getElementById('authStatus');
       const loginBtn = document.getElementById('loginBtn');
@@ -355,26 +341,22 @@
       const overlay = document.getElementById('loginOverlay');
 
       if (user) {
-        status.textContent = `✅ Connecté en tant que ${user.email}`;
+        status.textContent = 'Connecte : ' + user.email;
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
         overlay.classList.remove('login-overlay--visible');
-        // Charger les données si ce n'est pas déjà fait
         if (revenus.length === 0 && depenses.length === 0 && prets.length === 0) {
           chargerDonneesInitiales();
         }
-        // Démarrer les listeners si pas encore actifs
-        if (!window._listenersStarted) {
+        if (!listenersStarted) {
           startRealtimeListeners();
-          window._listenersStarted = true;
+          listenersStarted = true;
         }
       } else {
-        status.textContent = '🔒 Non connecté';
+        status.textContent = 'Non connecte';
         loginBtn.style.display = 'inline-flex';
         logoutBtn.style.display = 'none';
         overlay.classList.add('login-overlay--visible');
-        // On arrête les listeners (optionnel) mais on les laisse pour l'instant
-        // On vide les données pour éviter l'affichage
         revenus = [];
         depenses = [];
         prets = [];
@@ -396,11 +378,10 @@
 
       try {
         await auth.signInWithEmailAndPassword(email, password);
-        // L'écouteur onAuthStateChanged gérera la suite
       } catch (err) {
-        errorEl.textContent = 'Échec de connexion : ' + err.message;
+        errorEl.textContent = 'Echec de connexion : ' + err.message;
         errorEl.style.display = 'block';
-        console.error('Erreur auth:', err);
+        console.error('[ERROR] Auth:', err);
       }
     };
 
@@ -412,97 +393,92 @@
       await auth.signOut();
     };
 
-    // Écouteur d'état d'authentification
     auth.onAuthStateChanged(firebaseUser => {
       user = firebaseUser;
       updateAuthUI();
     });
 
-    // ============================================================
-    // 5. FONCTIONS D'ÉCRITURE (avec vérification auth)
-    // ============================================================
+    // Database Write Operations (with auth check)
     async function ajouterRevenuFirebase(rev) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       const newRef = refRevenus.push();
       await newRef.set(rev);
       return newRef.key;
     }
     async function supprimerRevenuFirebase(id) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       await refRevenus.child(id).remove();
     }
     async function ajouterDepenseFirebase(dep) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       const newRef = refDepenses.push();
       await newRef.set(dep);
       return newRef.key;
     }
     async function supprimerDepenseFirebase(id) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       await refDepenses.child(id).remove();
     }
     async function ajouterPretFirebase(pret) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       const newRef = refPrets.push();
       await newRef.set(pret);
       return newRef.key;
     }
     async function supprimerPretFirebase(id) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       await refPrets.child(id).remove();
     }
     async function modifierPretFirebase(id, newData) {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       await refPrets.child(id).update(newData);
     }
     async function ecrireTheme() {
-      if (!user) throw new Error('Non authentifié');
+      if (!user) throw new Error('Non authentifie');
       await refTheme.set(currentTheme);
     }
 
-    // ============================================================
-    // 6. CHARGEMENT INITIAL ET ÉCOUTE EN TEMPS RÉEL
-    // ============================================================
+    // Data Loading & Listeners
     function chargerDonneesInitiales() {
-      console.log('Chargement initial des données...');
+      console.log('[INFO] Chargement initial des donnees');
 
       refRevenus.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
           revenus = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
-          console.log(`✅ ${revenus.length} revenus chargés.`);
+          console.log('[INFO] Revenus charges : ' + revenus.length);
         } else {
           revenus = [];
-          console.log('ℹ️ Aucun revenu trouvé.');
+          console.log('[INFO] Aucun revenu trouve');
         }
         updateAll();
-      }).catch(err => console.error('❌ Erreur lecture revenus :', err));
+      }).catch(err => console.error('[ERROR] Lecture revenus :', err));
 
       refDepenses.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
           depenses = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
-          console.log(`✅ ${depenses.length} dépenses chargées.`);
+          console.log('[INFO] Depenses chargees : ' + depenses.length);
         } else {
           depenses = [];
-          console.log('ℹ️ Aucune dépense trouvée.');
+          console.log('[INFO] Aucune depense trouvee');
         }
         updateAll();
-      }).catch(err => console.error('❌ Erreur lecture depenses :', err));
+      }).catch(err => console.error('[ERROR] Lecture depenses :', err));
 
       refPrets.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
           prets = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
-          console.log(`✅ ${prets.length} prêts chargés.`);
+          console.log('[INFO] Prets charges : ' + prets.length);
         } else {
           prets = [];
-          console.log('ℹ️ Aucun prêt trouvé.');
+          console.log('[INFO] Aucun pret trouve');
         }
         updateAll();
-      }).catch(err => console.error('❌ Erreur lecture prets :', err));
+      }).catch(err => console.error('[ERROR] Lecture prets :', err));
 
       refTheme.once('value', snapshot => {
         const val = snapshot.val();
@@ -510,11 +486,11 @@
           currentTheme = val;
           applyTheme();
         }
-      }).catch(err => console.error('❌ Erreur lecture theme :', err));
+      }).catch(err => console.error('[ERROR] Lecture theme :', err));
     }
 
     function startRealtimeListeners() {
-      console.log('Démarrage des listeners en temps réel...');
+      console.log('[INFO] Demarrage des listeners temps reel');
 
       refRevenus.on('value', snapshot => {
         const data = snapshot.val();
@@ -525,7 +501,7 @@
           revenus = [];
         }
         updateAll();
-      }, error => console.error('❌ Erreur écoute revenus:', error));
+      }, error => console.error('[ERROR] Ecoute revenus:', error));
 
       refDepenses.on('value', snapshot => {
         const data = snapshot.val();
@@ -536,7 +512,7 @@
           depenses = [];
         }
         updateAll();
-      }, error => console.error('❌ Erreur écoute depenses:', error));
+      }, error => console.error('[ERROR] Ecoute depenses:', error));
 
       refPrets.on('value', snapshot => {
         const data = snapshot.val();
@@ -546,7 +522,7 @@
           prets = [];
         }
         updateAll();
-      }, error => console.error('❌ Erreur écoute prets:', error));
+      }, error => console.error('[ERROR] Ecoute prets:', error));
 
       refTheme.on('value', snapshot => {
         const val = snapshot.val();
@@ -554,12 +530,10 @@
           currentTheme = val;
           applyTheme();
         }
-      }, error => console.error('❌ Erreur écoute theme:', error));
+      }, error => console.error('[ERROR] Ecoute theme:', error));
     }
 
-    // ============================================================
-    // 7. RENDU UI (inchangé)
-    // ============================================================
+    // Rendering
     function updateDashboard() {
       const totalRev = revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0);
       const totalDep = depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0);
@@ -580,8 +554,8 @@
       if (!select) return;
       const currentVal = select.value;
       const data = type === 'revenus' ? revenus : depenses;
-      const categories = [...new Set(data.map(item => item.categorie || 'Sans catégorie'))].sort();
-      select.innerHTML = '<option value="">Toutes les catégories</option>';
+      const categories = [...new Set(data.map(item => item.categorie || 'Sans categorie'))].sort();
+      select.innerHTML = '<option value="">Toutes les categories</option>';
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -612,13 +586,13 @@
     function renderRevenus() {
       const tbody = document.getElementById('tableRevenus');
       if (revenus.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">— Aucun revenu</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">Aucun revenu</span></td></tr>';
       } else {
         tbody.innerHTML = revenus.map((r) => `
           <tr>
             <td>${formatDate(r.date)}</td>
             <td>${escapeHTML(r.description)}</td>
-            <td><span class="badge">${escapeHTML(r.categorie || 'Sans catégorie')}</span></td>
+            <td><span class="badge">${escapeHTML(r.categorie || 'Sans categorie')}</span></td>
             <td class="amount-cell">${formatMontant(r.montant)}</td>
             <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r._firebaseKey}')">×</button></td>
           </tr>
@@ -631,13 +605,13 @@
     function renderDepenses() {
       const tbody = document.getElementById('tableDepenses');
       if (depenses.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">— Aucune dépense</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">Aucune depense</span></td></tr>';
       } else {
         tbody.innerHTML = depenses.map((d) => `
           <tr>
             <td>${formatDate(d.date)}</td>
             <td>${escapeHTML(d.description)}</td>
-            <td><span class="badge">${escapeHTML(d.categorie || 'Sans catégorie')}</span></td>
+            <td><span class="badge">${escapeHTML(d.categorie || 'Sans categorie')}</span></td>
             <td class="amount-cell">${formatMontant(d.montant)}</td>
             <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
           </tr>
@@ -650,7 +624,7 @@
     function renderPrets() {
       const tbody = document.getElementById('tablePrets');
       if (prets.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><span class="empty-state">— Aucun prêt</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
       } else {
         tbody.innerHTML = prets.map((p) => {
           const total = parseFloat(p.montantTotal) || 0;
@@ -686,12 +660,10 @@
       renderPrets();
     }
 
-    // ============================================================
-    // 8. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
-    // ============================================================
+    // User Actions
     window.ajouterRevenu = async () => {
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
-      console.log('▶️ ajouterRevenu appelé');
+      console.log('[ACTION] ajouterRevenu');
       const desc = document.getElementById('revDesc').value.trim();
       const montant = parseFloat(document.getElementById('revMontant').value);
       const cat = document.getElementById('revCategorie').value.trim();
@@ -700,23 +672,23 @@
         alert('Description et montant >0 requis.');
         return;
       }
-      const newRev = { description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      const newRev = { description: desc, montant, categorie: cat || 'Sans categorie', date };
       try {
         const key = await ajouterRevenuFirebase(newRev);
-        console.log('✅ Revenu ajouté avec clé:', key);
+        console.log('[SUCCESS] Revenu ajoute, clé:', key);
         document.getElementById('revDesc').value = '';
         document.getElementById('revMontant').value = '';
         document.getElementById('revCategorie').value = '';
         document.getElementById('revDate').value = dateAujourdhui();
       } catch (err) {
-        console.error('❌ Erreur ajout revenu:', err);
+        console.error('[ERROR] Ajout revenu:', err);
         alert('Erreur : ' + err.message);
       }
     };
 
     window.ajouterDepense = async () => {
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
-      console.log('▶️ ajouterDepense appelé');
+      console.log('[ACTION] ajouterDepense');
       const desc = document.getElementById('depDesc').value.trim();
       const montant = parseFloat(document.getElementById('depMontant').value);
       const cat = document.getElementById('depCategorie').value.trim();
@@ -725,23 +697,23 @@
         alert('Description et montant >0 requis.');
         return;
       }
-      const newDep = { description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      const newDep = { description: desc, montant, categorie: cat || 'Sans categorie', date };
       try {
         const key = await ajouterDepenseFirebase(newDep);
-        console.log('✅ Dépense ajoutée avec clé:', key);
+        console.log('[SUCCESS] Depense ajoutee, clé:', key);
         document.getElementById('depDesc').value = '';
         document.getElementById('depMontant').value = '';
         document.getElementById('depCategorie').value = '';
         document.getElementById('depDate').value = dateAujourdhui();
       } catch (err) {
-        console.error('❌ Erreur ajout dépense:', err);
+        console.error('[ERROR] Ajout depense:', err);
         alert('Erreur : ' + err.message);
       }
     };
 
     window.ajouterPret = async () => {
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
-      console.log('▶️ ajouterPret appelé');
+      console.log('[ACTION] ajouterPret');
       const motif = document.getElementById('pretMotif').value.trim();
       const total = parseFloat(document.getElementById('pretMontant').value);
       const remb = parseFloat(document.getElementById('pretRembourse').value) || 0;
@@ -756,12 +728,12 @@
       const newPret = { motif, montantTotal: total, montantRembourse: remb };
       try {
         const key = await ajouterPretFirebase(newPret);
-        console.log('✅ Prêt ajouté avec clé:', key);
+        console.log('[SUCCESS] Pret ajoute, clé:', key);
         document.getElementById('pretMotif').value = '';
         document.getElementById('pretMontant').value = '';
         document.getElementById('pretRembourse').value = '0';
       } catch (err) {
-        console.error('❌ Erreur ajout prêt:', err);
+        console.error('[ERROR] Ajout pret:', err);
         alert('Erreur : ' + err.message);
       }
     };
@@ -771,33 +743,33 @@
       if (!confirm('Supprimer ce revenu ?')) return;
       try {
         await supprimerRevenuFirebase(key);
-        console.log('✅ Revenu supprimé');
+        console.log('[SUCCESS] Revenu supprime');
       } catch (err) {
-        console.error('❌ Erreur suppression revenu:', err);
+        console.error('[ERROR] Suppression revenu:', err);
         alert('Erreur : ' + err.message);
       }
     };
 
     window.supprimerDepense = async (key) => {
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
-      if (!confirm('Supprimer cette dépense ?')) return;
+      if (!confirm('Supprimer cette depense ?')) return;
       try {
         await supprimerDepenseFirebase(key);
-        console.log('✅ Dépense supprimée');
+        console.log('[SUCCESS] Depense supprimee');
       } catch (err) {
-        console.error('❌ Erreur suppression dépense:', err);
+        console.error('[ERROR] Suppression depense:', err);
         alert('Erreur : ' + err.message);
       }
     };
 
     window.supprimerPret = async (key) => {
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
-      if (!confirm('Supprimer ce prêt ?')) return;
+      if (!confirm('Supprimer ce pret ?')) return;
       try {
         await supprimerPretFirebase(key);
-        console.log('✅ Prêt supprimé');
+        console.log('[SUCCESS] Pret supprime');
       } catch (err) {
-        console.error('❌ Erreur suppression prêt:', err);
+        console.error('[ERROR] Suppression pret:', err);
         alert('Erreur : ' + err.message);
       }
     };
@@ -806,10 +778,10 @@
       if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       const p = prets.find(item => item._firebaseKey === key);
       if (!p) {
-        alert('Prêt introuvable.');
+        alert('Pret introuvable.');
         return;
       }
-      const nv = prompt(`Prêt : ${p.motif}\nTotal : ${formatMontant(p.montantTotal)}\nNouveau remboursé :`, (p.montantRembourse || 0).toFixed(2));
+      const nv = prompt('Pret : ' + p.motif + '\nTotal : ' + formatMontant(p.montantTotal) + '\nNouveau rembourse :', (p.montantRembourse || 0).toFixed(2));
       if (nv === null) return;
       const val = parseFloat(nv.replace(',', '.'));
       if (isNaN(val) || val < 0 || val > p.montantTotal) {
@@ -818,16 +790,14 @@
       }
       try {
         await modifierPretFirebase(key, { montantRembourse: val });
-        console.log('✅ Remboursement mis à jour');
+        console.log('[SUCCESS] Remboursement mis a jour');
       } catch (err) {
-        console.error('❌ Erreur modification remboursement:', err);
+        console.error('[ERROR] Modification remboursement:', err);
         alert('Erreur : ' + err.message);
       }
     };
 
-    // ============================================================
-    // 9. THÈME
-    // ============================================================
+    // Theme
     function applyTheme() {
       document.body.setAttribute('data-theme', currentTheme);
       document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☽' : '☀';
@@ -841,14 +811,12 @@
         try {
           await ecrireTheme();
         } catch (err) {
-          console.error('Erreur sauvegarde thème:', err);
+          console.error('[ERROR] Sauvegarde theme:', err);
         }
       }
     };
 
-    // ============================================================
-    // 10. ONGLETS
-    // ============================================================
+    // Tabs
     window.switchTab = (name) => {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
@@ -859,9 +827,7 @@
       else if (name === 'dettes') renderPrets();
     };
 
-    // ============================================================
-    // 11. EXPORT / IMPORT JSON
-    // ============================================================
+    // Export / Import
     window.exportToJSON = () => {
       const data = {
         revenus: revenus.map(({ _firebaseKey, ...r }) => r),
@@ -874,7 +840,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `budget_data_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = 'budget_data_' + new Date().toISOString().slice(0,10) + '.json';
       a.click();
       URL.revokeObjectURL(url);
     };
@@ -888,23 +854,17 @@
         try {
           const data = JSON.parse(e.target.result);
           if (!data.revenus || !data.depenses || !data.prets) {
-            alert('Fichier JSON invalide : les clés "revenus", "depenses", "prets" sont requises.');
+            alert('Fichier JSON invalide : les cles "revenus", "depenses", "prets" sont requises.');
             return;
           }
-          if (!confirm('Ceci va remplacer toutes vos données actuelles. Continuer ?')) return;
+          if (!confirm('Ceci va remplacer toutes vos donnees actuelles. Continuer ?')) return;
           await refRevenus.set(null);
           await refDepenses.set(null);
           await refPrets.set(null);
-          for (const r of data.revenus) {
-            await refRevenus.push(r);
-          }
-          for (const d of data.depenses) {
-            await refDepenses.push(d);
-          }
-          for (const p of data.prets) {
-            await refPrets.push(p);
-          }
-          alert('Données importées avec succès !');
+          for (const r of data.revenus) { await refRevenus.push(r); }
+          for (const d of data.depenses) { await refDepenses.push(d); }
+          for (const p of data.prets) { await refPrets.push(p); }
+          alert('Donnees importees avec succes !');
         } catch (err) {
           alert('Erreur lors de la lecture du fichier : ' + err.message);
         }
@@ -913,9 +873,6 @@
       event.target.value = '';
     };
 
-    // ============================================================
-    // 12. EXPORT EXCEL (inchangé)
-    // ============================================================
     window.exportToExcel = () => {
       if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
       const wb = XLSX.utils.book_new();
@@ -923,32 +880,28 @@
         ['Gestionnaire de budget de Faniry'],
         ['Solde', (revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0) - depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0))],
         ['Revenus', revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0)],
-        ['Dépenses', depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0)],
+        ['Depenses', depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0)],
         ['Dette restante', Math.max(0, prets.reduce((s, p) => s + parseFloat(p.montantTotal || 0), 0) - prets.reduce((s, p) => s + parseFloat(p.montantRembourse || 0), 0))]
       ];
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Résumé');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(revenus.map(r => ({ Date: r.date, Description: r.description, Catégorie: r.categorie, Montant: r.montant }))), 'Revenus');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(depenses.map(d => ({ Date: d.date, Description: d.description, Catégorie: d.categorie, Montant: d.montant }))), 'Dépenses');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prets.map(p => ({ Motif: p.motif, Total: p.montantTotal, Remboursé: p.montantRembourse, Restant: Math.max(0, p.montantTotal - p.montantRembourse), Progression: p.montantTotal ? Math.round((p.montantRembourse / p.montantTotal) * 100) : 0 }))), 'Prêts Garant');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Resume');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(revenus.map(r => ({ Date: r.date, Description: r.description, Categorie: r.categorie, Montant: r.montant }))), 'Revenus');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(depenses.map(d => ({ Date: d.date, Description: d.description, Categorie: d.categorie, Montant: d.montant }))), 'Depenses');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prets.map(p => ({ Motif: p.motif, Total: p.montantTotal, Rembourse: p.montantRembourse, Restant: Math.max(0, p.montantTotal - p.montantRembourse), Progression: p.montantTotal ? Math.round((p.montantRembourse / p.montantTotal) * 100) : 0 }))), 'Prets Garant');
       XLSX.writeFile(wb, 'Gestionnaire_de_budget_de_Faniry_' + new Date().toISOString().slice(0, 10) + '.xlsx');
     };
 
-    // ============================================================
-    // 13. INITIALISATION
-    // ============================================================
+    // Init
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('revDate').value = dateAujourdhui();
       document.getElementById('depDate').value = dateAujourdhui();
-      // L'initialisation de l'auth se fait automatiquement via onAuthStateChanged
-      // On ne charge les données qu'après connexion
     });
 
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 'Enter') {
         const active = document.querySelector('.tab-panel--active');
         if (active.id === 'panelRevenus') window.ajouterRevenu();
-        if (active.id === 'panelDepenses') window.ajouterDepense();
-        if (active.id === 'panelDettes') window.ajouterPret();
+        else if (active.id === 'panelDepenses') window.ajouterDepense();
+        else if (active.id === 'panelDettes') window.ajouterPret();
       }
     });
   </script>
