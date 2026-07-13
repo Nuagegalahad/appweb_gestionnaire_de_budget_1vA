@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestionnaire de budget de Faniry</title>
+  <!-- Firebase SDK (App + Database + Auth) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     /* --- Votre style exact (inchangé) --- */
@@ -89,6 +91,8 @@
     .btn--export:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
     .btn--import { background:var(--text); color:var(--bg); font-weight:900; }
     .btn--import:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
+    .btn--login { background:var(--text); color:var(--bg); font-weight:900; }
+    .btn--login:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
     .theme-toggle {
       display:flex; align-items:center; gap:0.5rem; cursor:pointer;
       font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase;
@@ -165,6 +169,21 @@
     .empty-state { text-align:center; padding:2.5rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.85rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
+    .login-overlay {
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.7); backdrop-filter:blur(5px);
+      justify-content:center; align-items:center; z-index:999;
+    }
+    .login-overlay--visible { display:flex; }
+    .login-box {
+      background:var(--surface); border:var(--border-width) solid var(--border);
+      padding:2rem; max-width:400px; width:90%; box-shadow:var(--shadow);
+    }
+    .login-box h2 { font-family:var(--font-heading); margin-bottom:1.5rem; }
+    .login-box .form-group { margin-bottom:1rem; }
+    .login-box .btn { width:100%; justify-content:center; }
+    .login-error { color:#ff4444; font-size:0.8rem; margin-top:0.5rem; display:none; }
+    .auth-status { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); }
   </style>
 </head>
 <body data-theme="dark">
@@ -172,6 +191,9 @@
     <header class="header">
       <div><h1 class="header__title">Gestionnaire de budget de Faniry</h1></div>
       <div class="header__actions">
+        <span class="auth-status" id="authStatus">⏳ Connexion...</span>
+        <button class="btn btn--login" id="loginBtn" onclick="seConnecter()">🔐 Se connecter</button>
+        <button class="btn btn--login" id="logoutBtn" style="display:none;" onclick="seDeconnecter()">🚪 Se déconnecter</button>
         <button class="btn btn--export" onclick="exportToExcel()">⤓ Export Excel</button>
         <button class="btn btn--import" onclick="document.getElementById('jsonFileInput').click()">⬆ Import JSON</button>
         <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(event)" />
@@ -181,6 +203,23 @@
         </button>
       </div>
     </header>
+
+    <!-- Overlay de connexion -->
+    <div class="login-overlay" id="loginOverlay">
+      <div class="login-box">
+        <h2>🔐 Connexion</h2>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="input" id="loginEmail" placeholder="votre@email.fr" />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input type="password" class="input" id="loginPassword" placeholder="••••••••" />
+        </div>
+        <button class="btn" onclick="authentifier()">Se connecter</button>
+        <div class="login-error" id="loginError">Erreur d'identification</div>
+      </div>
+    </div>
 
     <section class="dashboard" id="dashboard">
       <div class="card card--solde"><p class="card__label">Solde actuel</p><p class="card__amount" id="cardSolde">0,00 €</p></div>
@@ -269,6 +308,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
     // ============================================================
@@ -278,8 +318,9 @@
     let depenses = [];
     let prets = [];
     let currentTheme = 'dark';
+    let user = null; // utilisateur authentifié
 
-    // Références (on utilise push() pour ajouter)
+    // Références
     const refRevenus = db.ref('revenus');
     const refDepenses = db.ref('depenses');
     const refPrets = db.ref('prets');
@@ -303,47 +344,124 @@
       div.textContent = str;
       return div.innerHTML;
     }
-    // Génère un ID unique (chaîne)
-    function genId() {
-      return Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 8);
-    }
 
     // ============================================================
-    // 4. FONCTIONS D'ÉCRITURE (utilisation de push/remove)
+    // 4. GESTION DE L'AUTHENTIFICATION
+    // ============================================================
+    function updateAuthUI() {
+      const status = document.getElementById('authStatus');
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const overlay = document.getElementById('loginOverlay');
+
+      if (user) {
+        status.textContent = `✅ Connecté en tant que ${user.email}`;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-flex';
+        overlay.classList.remove('login-overlay--visible');
+        // Charger les données si ce n'est pas déjà fait
+        if (revenus.length === 0 && depenses.length === 0 && prets.length === 0) {
+          chargerDonneesInitiales();
+        }
+        // Démarrer les listeners si pas encore actifs
+        if (!window._listenersStarted) {
+          startRealtimeListeners();
+          window._listenersStarted = true;
+        }
+      } else {
+        status.textContent = '🔒 Non connecté';
+        loginBtn.style.display = 'inline-flex';
+        logoutBtn.style.display = 'none';
+        overlay.classList.add('login-overlay--visible');
+        // On arrête les listeners (optionnel) mais on les laisse pour l'instant
+        // On vide les données pour éviter l'affichage
+        revenus = [];
+        depenses = [];
+        prets = [];
+        updateAll();
+      }
+    }
+
+    window.authentifier = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorEl = document.getElementById('loginError');
+      errorEl.style.display = 'none';
+
+      if (!email || !password) {
+        errorEl.textContent = 'Veuillez remplir tous les champs.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        // L'écouteur onAuthStateChanged gérera la suite
+      } catch (err) {
+        errorEl.textContent = 'Échec de connexion : ' + err.message;
+        errorEl.style.display = 'block';
+        console.error('Erreur auth:', err);
+      }
+    };
+
+    window.seConnecter = function() {
+      document.getElementById('loginOverlay').classList.add('login-overlay--visible');
+    };
+
+    window.seDeconnecter = async function() {
+      await auth.signOut();
+    };
+
+    // Écouteur d'état d'authentification
+    auth.onAuthStateChanged(firebaseUser => {
+      user = firebaseUser;
+      updateAuthUI();
+    });
+
+    // ============================================================
+    // 5. FONCTIONS D'ÉCRITURE (avec vérification auth)
     // ============================================================
     async function ajouterRevenuFirebase(rev) {
+      if (!user) throw new Error('Non authentifié');
       const newRef = refRevenus.push();
       await newRef.set(rev);
       return newRef.key;
     }
     async function supprimerRevenuFirebase(id) {
+      if (!user) throw new Error('Non authentifié');
       await refRevenus.child(id).remove();
     }
     async function ajouterDepenseFirebase(dep) {
+      if (!user) throw new Error('Non authentifié');
       const newRef = refDepenses.push();
       await newRef.set(dep);
       return newRef.key;
     }
     async function supprimerDepenseFirebase(id) {
+      if (!user) throw new Error('Non authentifié');
       await refDepenses.child(id).remove();
     }
     async function ajouterPretFirebase(pret) {
+      if (!user) throw new Error('Non authentifié');
       const newRef = refPrets.push();
       await newRef.set(pret);
       return newRef.key;
     }
     async function supprimerPretFirebase(id) {
+      if (!user) throw new Error('Non authentifié');
       await refPrets.child(id).remove();
     }
     async function modifierPretFirebase(id, newData) {
+      if (!user) throw new Error('Non authentifié');
       await refPrets.child(id).update(newData);
     }
     async function ecrireTheme() {
+      if (!user) throw new Error('Non authentifié');
       await refTheme.set(currentTheme);
     }
 
     // ============================================================
-    // 5. CHARGEMENT INITIAL ET ÉCOUTE EN TEMPS RÉEL
+    // 6. CHARGEMENT INITIAL ET ÉCOUTE EN TEMPS RÉEL
     // ============================================================
     function chargerDonneesInitiales() {
       console.log('Chargement initial des données...');
@@ -351,7 +469,6 @@
       refRevenus.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          // Transformer l'objet { clé: valeur } en tableau avec la clé comme id
           revenus = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
           console.log(`✅ ${revenus.length} revenus chargés.`);
@@ -394,9 +511,6 @@
           applyTheme();
         }
       }).catch(err => console.error('❌ Erreur lecture theme :', err));
-
-      // Listeners en temps réel
-      startRealtimeListeners();
     }
 
     function startRealtimeListeners() {
@@ -444,7 +558,7 @@
     }
 
     // ============================================================
-    // 6. RENDU UI (inchangé, mais on utilise _firebaseKey pour les actions)
+    // 7. RENDU UI (inchangé)
     // ============================================================
     function updateDashboard() {
       const totalRev = revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0);
@@ -573,9 +687,10 @@
     }
 
     // ============================================================
-    // 7. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
+    // 8. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
     // ============================================================
     window.ajouterRevenu = async () => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       console.log('▶️ ajouterRevenu appelé');
       const desc = document.getElementById('revDesc').value.trim();
       const montant = parseFloat(document.getElementById('revMontant').value);
@@ -586,23 +701,21 @@
         return;
       }
       const newRev = { description: desc, montant, categorie: cat || 'Sans catégorie', date };
-      console.log('📦 Nouveau revenu:', newRev);
       try {
         const key = await ajouterRevenuFirebase(newRev);
         console.log('✅ Revenu ajouté avec clé:', key);
-        // Le listener mettra à jour automatiquement l'UI
-        // On vide les champs après l'écriture réussie
         document.getElementById('revDesc').value = '';
         document.getElementById('revMontant').value = '';
         document.getElementById('revCategorie').value = '';
         document.getElementById('revDate').value = dateAujourdhui();
       } catch (err) {
         console.error('❌ Erreur ajout revenu:', err);
-        alert('Erreur lors de l\'ajout du revenu : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.ajouterDepense = async () => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       console.log('▶️ ajouterDepense appelé');
       const desc = document.getElementById('depDesc').value.trim();
       const montant = parseFloat(document.getElementById('depMontant').value);
@@ -622,11 +735,12 @@
         document.getElementById('depDate').value = dateAujourdhui();
       } catch (err) {
         console.error('❌ Erreur ajout dépense:', err);
-        alert('Erreur lors de l\'ajout de la dépense : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.ajouterPret = async () => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       console.log('▶️ ajouterPret appelé');
       const motif = document.getElementById('pretMotif').value.trim();
       const total = parseFloat(document.getElementById('pretMontant').value);
@@ -648,44 +762,48 @@
         document.getElementById('pretRembourse').value = '0';
       } catch (err) {
         console.error('❌ Erreur ajout prêt:', err);
-        alert('Erreur lors de l\'ajout du prêt : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.supprimerRevenu = async (key) => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       if (!confirm('Supprimer ce revenu ?')) return;
       try {
         await supprimerRevenuFirebase(key);
         console.log('✅ Revenu supprimé');
       } catch (err) {
         console.error('❌ Erreur suppression revenu:', err);
-        alert('Erreur lors de la suppression : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.supprimerDepense = async (key) => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       if (!confirm('Supprimer cette dépense ?')) return;
       try {
         await supprimerDepenseFirebase(key);
         console.log('✅ Dépense supprimée');
       } catch (err) {
         console.error('❌ Erreur suppression dépense:', err);
-        alert('Erreur lors de la suppression : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.supprimerPret = async (key) => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       if (!confirm('Supprimer ce prêt ?')) return;
       try {
         await supprimerPretFirebase(key);
         console.log('✅ Prêt supprimé');
       } catch (err) {
         console.error('❌ Erreur suppression prêt:', err);
-        alert('Erreur lors de la suppression : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     window.modifierRemboursementPret = async (key) => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       const p = prets.find(item => item._firebaseKey === key);
       if (!p) {
         alert('Prêt introuvable.');
@@ -703,12 +821,12 @@
         console.log('✅ Remboursement mis à jour');
       } catch (err) {
         console.error('❌ Erreur modification remboursement:', err);
-        alert('Erreur lors de la modification : ' + err.message);
+        alert('Erreur : ' + err.message);
       }
     };
 
     // ============================================================
-    // 8. THÈME
+    // 9. THÈME
     // ============================================================
     function applyTheme() {
       document.body.setAttribute('data-theme', currentTheme);
@@ -719,11 +837,17 @@
     window.toggleTheme = async () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
       applyTheme();
-      await ecrireTheme();
+      if (user) {
+        try {
+          await ecrireTheme();
+        } catch (err) {
+          console.error('Erreur sauvegarde thème:', err);
+        }
+      }
     };
 
     // ============================================================
-    // 9. ONGLETS
+    // 10. ONGLETS
     // ============================================================
     window.switchTab = (name) => {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
@@ -736,10 +860,9 @@
     };
 
     // ============================================================
-    // 10. EXPORT / IMPORT JSON (adapté pour les clés Firebase)
+    // 11. EXPORT / IMPORT JSON
     // ============================================================
     window.exportToJSON = () => {
-      // On exporte les données sans les clés internes _firebaseKey
       const data = {
         revenus: revenus.map(({ _firebaseKey, ...r }) => r),
         depenses: depenses.map(({ _firebaseKey, ...d }) => d),
@@ -757,6 +880,7 @@
     };
 
     window.importFromJSON = async (event) => {
+      if (!user) { alert('Veuillez vous connecter d\'abord.'); return; }
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -768,11 +892,9 @@
             return;
           }
           if (!confirm('Ceci va remplacer toutes vos données actuelles. Continuer ?')) return;
-          // On vide complètement les nœuds existants
           await refRevenus.set(null);
           await refDepenses.set(null);
           await refPrets.set(null);
-          // Puis on ajoute chaque élément avec push()
           for (const r of data.revenus) {
             await refRevenus.push(r);
           }
@@ -792,7 +914,7 @@
     };
 
     // ============================================================
-    // 11. EXPORT EXCEL (inchangé)
+    // 12. EXPORT EXCEL (inchangé)
     // ============================================================
     window.exportToExcel = () => {
       if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
@@ -812,12 +934,13 @@
     };
 
     // ============================================================
-    // 12. INITIALISATION
+    // 13. INITIALISATION
     // ============================================================
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('revDate').value = dateAujourdhui();
       document.getElementById('depDate').value = dateAujourdhui();
-      chargerDonneesInitiales();
+      // L'initialisation de l'auth se fait automatiquement via onAuthStateChanged
+      // On ne charge les données qu'après connexion
     });
 
     document.addEventListener('keydown', e => {
