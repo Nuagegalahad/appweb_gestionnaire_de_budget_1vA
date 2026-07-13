@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestionnaire de budget de Faniry</title>
+  <!-- Firebase SDK (Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    /* --- Votre style exact (inchangé) --- */
+    :root {
+      --bg: #0a0a0a;
+      --surface: #151515;
+      --text: #f0f0f0;
+      --text-secondary: #b0b0b0;
+      --border: #f0f0f0;
+      --border-light: #444;
+      --shadow: 5px 5px 0px #f0f0f0;
+      --shadow-sm: 3px 3px 0px #f0f0f0;
+      --accent: #f0f0f0;
+      --font-heading: 'Arial Black', 'Impact', 'Helvetica Neue', sans-serif;
+      --font-mono: 'Courier New', 'Consolas', 'Monaco', monospace;
+      --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      --border-width: 3px;
+      --transition: 0.1s ease;
+      --card-bg: #1a1a1a;
+      --color-revenu: #2e7d32;
+      --color-depense: #fbc02d;
+      --color-dette: #c62828;
+      --card-solde-bg: #1c1c1c;
+      --card-revenu-bg: #162616;
+      --card-depense-bg: #262216;
+      --card-dette-bg: #261616;
+    }
+    [data-theme="light"] {
+      --bg: #f5f5f0;
+      --surface: #ffffff;
+      --text: #0a0a0a;
+      --text-secondary: #444;
+      --border: #0a0a0a;
+      --border-light: #ccc;
+      --shadow: 5px 5px 0px #0a0a0a;
+      --shadow-sm: 3px 3px 0px #0a0a0a;
+      --accent: #0a0a0a;
+      --card-bg: #ffffff;
+      --card-solde-bg: #f9f9f9;
+      --card-revenu-bg: #e8f5e9;
+      --card-depense-bg: #fff8e1;
+      --card-dette-bg: #ffebee;
+      --color-revenu: #2e7d32;
+      --color-depense: #f9a825;
+      --color-dette: #c62828;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { font-size:15px; scroll-behavior:smooth; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height:1.5;
+      min-height:100vh;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app-container { max-width:1100px; margin:0 auto; padding:1.5rem 1rem 3rem; }
+    .header {
+      display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      gap:1rem; margin-bottom:2rem; padding:1.25rem 1.5rem;
+      background:var(--surface); border:var(--border-width) solid var(--border);
+      box-shadow:var(--shadow);
+    }
+    .header__title { font-family:var(--font-heading); font-size:1.6rem; letter-spacing:-0.5px; text-transform:uppercase; }
+    .header__subtitle { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); letter-spacing:1px; }
+    .header__actions { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
+    .btn {
+      display:inline-flex; align-items:center; gap:0.4rem;
+      font-family:var(--font-heading); font-size:0.8rem; text-transform:uppercase;
+      letter-spacing:0.5px; padding:0.6rem 1.1rem; cursor:pointer;
+      background:var(--surface); color:var(--text);
+      border:var(--border-width) solid var(--border);
+      box-shadow:var(--shadow-sm); transition:all var(--transition);
+      user-select:none; white-space:nowrap; position:relative; top:0; left:0;
+    }
+    .btn:hover { background:var(--text); color:var(--bg); border-color:var(--text); }
+    .btn:active { box-shadow:1px 1px 0px var(--border); top:2px; left:2px; }
+    .btn--sm { font-size:0.65rem; padding:0.35rem 0.7rem; box-shadow:2px 2px 0px var(--border); border-width:2px; }
+    .btn--danger { border-color:var(--text); }
+    .btn--danger:hover { background:#ff3333; color:#fff; border-color:#ff3333; }
+    .btn--export { background:var(--text); color:var(--bg); font-weight:900; }
+    .btn--export:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
+    .btn--import { background:var(--text); color:var(--bg); font-weight:900; }
+    .btn--import:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
+    .theme-toggle {
+      display:flex; align-items:center; gap:0.5rem; cursor:pointer;
+      font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase;
+      letter-spacing:1px; user-select:none; padding:0.4rem 0.8rem;
+      border:2px solid var(--border); background:var(--surface); color:var(--text);
+      transition:all var(--transition);
+    }
+    .theme-toggle:hover { background:var(--text); color:var(--bg); }
+    .dashboard {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+      gap:1rem; margin-bottom:2rem;
+    }
+    .card {
+      background:var(--card-bg); border:var(--border-width) solid var(--border);
+      padding:1.2rem 1rem; box-shadow:var(--shadow); border-left-width:8px;
+    }
+    .card--solde { background:var(--card-solde-bg); border-left-color:var(--border); }
+    .card--revenu { background:var(--card-revenu-bg); border-left-color:var(--color-revenu); }
+    .card--depense { background:var(--card-depense-bg); border-left-color:var(--color-depense); }
+    .card--dette { background:var(--card-dette-bg); border-left-color:var(--color-dette); }
+    .card__label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:2px; color:var(--text-secondary); margin-bottom:0.4rem; }
+    .card__amount { font-family:var(--font-mono); font-size:1.8rem; font-weight:700; letter-spacing:-1px; }
+    .card__amount--negative { color:var(--color-dette); }
+    .tabs { display:flex; gap:0; margin-bottom:0; flex-wrap:wrap; }
+    .tab-btn {
+      font-family:var(--font-heading); font-size:0.85rem; text-transform:uppercase;
+      letter-spacing:0.5px; padding:0.7rem 1.4rem; cursor:pointer;
+      background:var(--surface); color:var(--text);
+      border:var(--border-width) solid var(--border); border-bottom:none;
+      margin-right:-3px; transition:all var(--transition); position:relative; z-index:1;
+    }
+    .tab-btn:hover { background:var(--text); color:var(--bg); }
+    .tab-btn--active {
+      background:var(--card-bg); border-bottom:var(--border-width) solid var(--card-bg);
+      z-index:2; top:3px; font-weight:900;
+    }
+    .tab-panel {
+      display:none; background:var(--card-bg);
+      border:var(--border-width) solid var(--border);
+      border-top:var(--border-width) solid var(--border);
+      padding:1.5rem; box-shadow:var(--shadow);
+      animation:fadeIn 0.2s ease;
+    }
+    .tab-panel--active { display:block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+    .form-row { display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.2rem; align-items:flex-end; }
+    .form-group { display:flex; flex-direction:column; gap:0.3rem; flex:1; min-width:110px; }
+    .form-group label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); font-weight:700; }
+    .input, .select {
+      font-family:var(--font-mono); font-size:0.85rem; padding:0.55rem 0.7rem;
+      background:var(--bg); color:var(--text);
+      border:var(--border-width) solid var(--border);
+      box-shadow:2px 2px 0px var(--border); transition:all var(--transition);
+      outline:none; width:100%; -webkit-appearance:none; border-radius:0;
+    }
+    .filter-bar { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+    .filter-bar select { flex:1; min-width:160px; }
+    .table-wrapper { overflow-x:auto; border:2px solid var(--border); margin-bottom:1rem; }
+    table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:0.78rem; min-width:600px; }
+    thead th {
+      background:var(--text); color:var(--bg); padding:0.6rem 0.7rem;
+      font-family:var(--font-heading); font-size:0.65rem; text-transform:uppercase;
+      letter-spacing:1px; border:2px solid var(--border); white-space:nowrap;
+    }
+    tbody td { padding:0.5rem 0.7rem; border:2px solid var(--border-light); vertical-align:middle; }
+    tbody tr:hover { background:var(--bg); }
+    .amount-cell { text-align:right; font-weight:700; white-space:nowrap; }
+    .actions-cell { text-align:center; white-space:nowrap; display:flex; gap:0.4rem; justify-content:center; }
+    .progress-bar-wrap { display:flex; align-items:center; gap:0.4rem; min-width:120px; }
+    .progress-bar { flex:1; height:12px; border:2px solid var(--border); background:var(--bg); }
+    .progress-bar__fill { height:100%; background:var(--color-dette); transition:width 0.3s ease; }
+    .progress-text { font-family:var(--font-mono); font-size:0.65rem; }
+    .badge { display:inline-block; font-family:var(--font-mono); font-size:0.6rem; padding:0.2rem 0.5rem; border:2px solid var(--border); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    .empty-state { text-align:center; padding:2.5rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.85rem; }
+    .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
+    .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
+    .import-area { margin: 1rem 0; padding: 1rem; border: 3px dashed var(--border); text-align:center; }
+    .import-area input[type="file"] { display: block; margin: 0.5rem auto; }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="app-container">
+    <header class="header">
+      <div><h1 class="header__title">Gestionnaire de budget de Faniry</h1></div>
+      <div class="header__actions">
+        <button class="btn btn--export" onclick="exportToExcel()">⤓ Export Excel</button>
+        <button class="btn btn--import" onclick="document.getElementById('jsonFileInput').click()">⬆ Import JSON</button>
+        <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importFromJSON(event)" />
+        <button class="btn" onclick="exportToJSON()">⤓ Export JSON</button>
+        <button class="theme-toggle" onclick="toggleTheme()">
+          <span id="themeIcon">☽</span> <span id="themeLabel">Sombre</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="dashboard" id="dashboard">
+      <div class="card card--solde"><p class="card__label">Solde actuel</p><p class="card__amount" id="cardSolde">0,00 €</p></div>
+      <div class="card card--revenu"><p class="card__label">Revenus totaux</p><p class="card__amount" id="cardRevenus">0,00 €</p></div>
+      <div class="card card--depense"><p class="card__label">Dépenses totales</p><p class="card__amount" id="cardDepenses">0,00 €</p></div>
+      <div class="card card--dette"><p class="card__label">Dette restante</p><p class="card__amount" id="cardDettes">0,00 €</p></div>
+    </section>
+
+    <div class="tabs">
+      <button class="tab-btn tab-btn--active" onclick="switchTab('revenus')" id="tabBtnRevenus">Revenus</button>
+      <button class="tab-btn" onclick="switchTab('depenses')" id="tabBtnDepenses">Dépenses</button>
+      <button class="tab-btn" onclick="switchTab('dettes')" id="tabBtnDettes">Dette Garant</button>
+    </div>
+
+    <!-- REVENUS -->
+    <section class="tab-panel tab-panel--active" id="panelRevenus">
+      <div class="form-row">
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Salaire stage, CAF..."></div>
+        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+        <div class="form-group"><label>Catégorie</label><input type="text" class="input" id="revCategorie" placeholder="Ex: CAF, Salaire..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterRevenu()">+ Ajouter</button></div>
+      </div>
+      <div class="filter-bar">
+        <select id="filtreRevenuCat" class="select"><option value="">Toutes les catégories</option></select>
+        <button class="btn btn--sm" onclick="filtrerTable('revenus')">Filtrer</button>
+        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreRevenuCat').value=''; filtrerTable('revenus');">✕</button>
+      </div>
+      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableRevenus"></tbody></table></div>
+    </section>
+
+    <!-- DEPENSES -->
+    <section class="tab-panel" id="panelDepenses">
+      <div class="form-row">
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="depDesc" placeholder="Ex: Loyer, Courses..."></div>
+        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="depMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+        <div class="form-group"><label>Catégorie</label><input type="text" class="input" id="depCategorie" placeholder="Ex: Alimentation..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="depDate"></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterDepense()">+ Ajouter</button></div>
+      </div>
+      <div class="filter-bar">
+        <select id="filtreDepenseCat" class="select"><option value="">Toutes les catégories</option></select>
+        <button class="btn btn--sm" onclick="filtrerTable('depenses')">Filtrer</button>
+        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreDepenseCat').value=''; filtrerTable('depenses');">✕</button>
+      </div>
+      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th>Action</th></tr></thead><tbody id="tableDepenses"></tbody></table></div>
+    </section>
+
+    <!-- DETTES -->
+    <section class="tab-panel" id="panelDettes">
+      <div class="form-row">
+        <div class="form-group"><label>Motif du prêt</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarité..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+        <div class="form-group" style="max-width:150px;"><label>Déjà remboursé (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="0.01" min="0" value="0"></div>
+        <div class="form-group" style="justify-content:flex-end;min-width:auto;"><button class="btn" onclick="ajouterPret()">+ Ajouter prêt</button></div>
+      </div>
+      <div class="table-wrapper"><table><thead><tr><th>Motif</th><th>Total</th><th>Remboursé</th><th>Restant</th><th>Progression</th><th>Action</th></tr></thead><tbody id="tablePrets"></tbody></table></div>
+      <div class="table-wrapper" style="margin-top:1rem;">
+        <table><thead><tr><th colspan="5">Progression globale</th></tr></thead>
+          <tbody><tr class="total-row">
+            <td>Total Garant</td>
+            <td id="totalDu" class="amount-cell">0,00 €</td>
+            <td id="totalRembourse" class="amount-cell">0,00 €</td>
+            <td id="totalRestant" class="amount-cell">0,00 €</td>
+            <td><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" id="barreGlobaleFill" style="width:0%;"></div></div><span id="pourcentageGlobal">0%</span></div></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">© 2026 • Gestionnaire de budget de Faniry • Données synchronisées</footer>
+  </div>
+
+  <script>
+    // ============================================================
+    // 1. CONFIGURATION FIREBASE (Realtime Database)
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyA43XhbbuyH9T4pLplJe9mtiS3a9nQ4RFA",
+      authDomain: "budget-faniry-version-1.firebaseapp.com",
+      databaseURL: "https://budget-faniry-version-1-default-rtdb.firebaseio.com", // <-- Vérifiez cette URL
+      projectId: "budget-faniry-version-1",
+      storageBucket: "budget-faniry-version-1.firebasestorage.app",
+      messagingSenderId: "805343864535",
+      appId: "1:805343864535:web:3ecb04d66c7744eb95b292"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database(); // Référence à la Realtime Database
+
+    // ============================================================
+    // 2. ÉTAT LOCAL
+    // ============================================================
+    let revenus = [];
+    let depenses = [];
+    let prets = [];
+    let currentTheme = 'dark';
+
+    // ============================================================
+    // 3. FONCTIONS UTILITAIRES (inchangées)
+    // ============================================================
+    function formatMontant(m) { return parseFloat(m).toFixed(2).replace('.', ',') + ' €'; }
+    function formatDate(d) {
+      if (!d) return '—';
+      const p = d.split('-');
+      return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : d;
+    }
+    function dateAujourdhui() {
+      const now = new Date();
+      return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    }
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ============================================================
+    // 4. SYNCHRONISATION AVEC REALTIME DATABASE (ÉCOUTE EN TEMPS RÉEL)
+    // ============================================================
+    const refRevenus = db.ref('revenus');
+    const refDepenses = db.ref('depenses');
+    const refPrets = db.ref('prets');
+    const refTheme = db.ref('config/theme');
+
+    // Fonctions d'écriture (remplacement complet)
+    async function ecrireRevenus() {
+      // Transformer le tableau en objet avec l'ID comme clé (nécessaire pour RTDB)
+      const obj = {};
+      revenus.forEach(r => { obj[r.id] = r; });
+      await refRevenus.set(obj);
+    }
+    async function ecrireDepenses() {
+      const obj = {};
+      depenses.forEach(d => { obj[d.id] = d; });
+      await refDepenses.set(obj);
+    }
+    async function ecrirePrets() {
+      const obj = {};
+      prets.forEach(p => { obj[p.id] = p; });
+      await refPrets.set(obj);
+    }
+    async function ecrireTheme() {
+      await refTheme.set(currentTheme);
+    }
+
+    // Écoute en temps réel (remplace startRealtimeListeners)
+    function startRealtimeListeners() {
+      // Revenus
+      refRevenus.on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          revenus = Object.values(data);
+          revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
+        } else {
+          revenus = [];
+        }
+        updateAll();
+      }, error => console.error('Erreur écoute revenus:', error));
+
+      // Dépenses
+      refDepenses.on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          depenses = Object.values(data);
+          depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
+        } else {
+          depenses = [];
+        }
+        updateAll();
+      }, error => console.error('Erreur écoute depenses:', error));
+
+      // Prêts
+      refPrets.on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          prets = Object.values(data);
+        } else {
+          prets = [];
+        }
+        updateAll();
+      }, error => console.error('Erreur écoute prets:', error));
+
+      // Thème
+      refTheme.on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+          currentTheme = val;
+          applyTheme();
+        }
+      }, error => console.error('Erreur écoute theme:', error));
+    }
+
+    // ============================================================
+    // 5. RENDU UI (inchangé)
+    // ============================================================
+    function updateDashboard() {
+      const totalRev = revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0);
+      const totalDep = depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0);
+      const totalPret = prets.reduce((s, p) => s + parseFloat(p.montantTotal || 0), 0);
+      const totalRemb = prets.reduce((s, p) => s + parseFloat(p.montantRembourse || 0), 0);
+      document.getElementById('cardRevenus').textContent = formatMontant(totalRev);
+      document.getElementById('cardDepenses').textContent = formatMontant(totalDep);
+      document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totalPret - totalRemb));
+      const solde = totalRev - totalDep;
+      const soldeEl = document.getElementById('cardSolde');
+      soldeEl.textContent = formatMontant(solde);
+      soldeEl.classList.toggle('card__amount--negative', solde < 0);
+    }
+
+    function populateFilterSelect(type) {
+      const selectId = type === 'revenus' ? 'filtreRevenuCat' : 'filtreDepenseCat';
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      const currentVal = select.value;
+      const data = type === 'revenus' ? revenus : depenses;
+      const categories = [...new Set(data.map(item => item.categorie || 'Sans catégorie'))].sort();
+      select.innerHTML = '<option value="">Toutes les catégories</option>';
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+      });
+      if (categories.includes(currentVal) || currentVal === '') {
+        select.value = currentVal;
+      } else {
+        select.value = '';
+      }
+    }
+
+    window.filtrerTable = function(type) {
+      const selectId = type === 'revenus' ? 'filtreRevenuCat' : 'filtreDepenseCat';
+      const tableId = type === 'revenus' ? 'tableRevenus' : 'tableDepenses';
+      const filtre = document.getElementById(selectId).value.trim().toLowerCase();
+      const rows = document.querySelectorAll(`#${tableId} tr:not(.empty-state-row)`);
+      rows.forEach(row => {
+        const catCell = row.cells[2];
+        if (catCell) {
+          const catText = (catCell.textContent || '').toLowerCase();
+          row.style.display = (!filtre || catText === filtre) ? '' : 'none';
+        }
+      });
+    };
+
+    function renderRevenus() {
+      const tbody = document.getElementById('tableRevenus');
+      if (revenus.length === 0) {
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">— Aucun revenu</span></td></tr>';
+      } else {
+        tbody.innerHTML = revenus.map((r) => `
+          <tr>
+            <td>${formatDate(r.date)}</td>
+            <td>${escapeHTML(r.description)}</td>
+            <td><span class="badge">${escapeHTML(r.categorie || 'Sans catégorie')}</span></td>
+            <td class="amount-cell">${formatMontant(r.montant)}</td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r.id}')">×</button></td>
+          </tr>
+        `).join('');
+      }
+      populateFilterSelect('revenus');
+      window.filtrerTable('revenus');
+    }
+
+    function renderDepenses() {
+      const tbody = document.getElementById('tableDepenses');
+      if (depenses.length === 0) {
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">— Aucune dépense</span></td></tr>';
+      } else {
+        tbody.innerHTML = depenses.map((d) => `
+          <tr>
+            <td>${formatDate(d.date)}</td>
+            <td>${escapeHTML(d.description)}</td>
+            <td><span class="badge">${escapeHTML(d.categorie || 'Sans catégorie')}</span></td>
+            <td class="amount-cell">${formatMontant(d.montant)}</td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d.id}')">×</button></td>
+          </tr>
+        `).join('');
+      }
+      populateFilterSelect('depenses');
+      window.filtrerTable('depenses');
+    }
+
+    function renderPrets() {
+      const tbody = document.getElementById('tablePrets');
+      if (prets.length === 0) {
+        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><span class="empty-state">— Aucun prêt</span></td></tr>';
+      } else {
+        tbody.innerHTML = prets.map((p) => {
+          const total = parseFloat(p.montantTotal) || 0;
+          const remb = parseFloat(p.montantRembourse) || 0;
+          const rest = Math.max(0, total - remb);
+          const pct = total > 0 ? Math.round((remb / total) * 100) : 0;
+          return `
+          <tr>
+            <td>${escapeHTML(p.motif)}</td>
+            <td class="amount-cell">${formatMontant(total)}</td>
+            <td class="amount-cell">${formatMontant(remb)} <button class="btn btn--sm" onclick="modifierRemboursementPret('${p.id}')">✎</button></td>
+            <td class="amount-cell">${formatMontant(rest)}</td>
+            <td><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" style="width:${pct}%;"></div></div><span class="progress-text">${pct}%</span></div></td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerPret('${p.id}')">×</button></td>
+          </tr>`;
+        }).join('');
+      }
+      const totalPret = prets.reduce((s, p) => s + parseFloat(p.montantTotal || 0), 0);
+      const totalRemb = prets.reduce((s, p) => s + parseFloat(p.montantRembourse || 0), 0);
+      const restGlobal = Math.max(0, totalPret - totalRemb);
+      const pourcentage = totalPret > 0 ? Math.round((totalRemb / totalPret) * 100) : 0;
+      document.getElementById('totalDu').textContent = formatMontant(totalPret);
+      document.getElementById('totalRembourse').textContent = formatMontant(totalRemb);
+      document.getElementById('totalRestant').textContent = formatMontant(restGlobal);
+      document.getElementById('barreGlobaleFill').style.width = pourcentage + '%';
+      document.getElementById('pourcentageGlobal').textContent = pourcentage + '%';
+    }
+
+    function updateAll() {
+      updateDashboard();
+      renderRevenus();
+      renderDepenses();
+      renderPrets();
+    }
+
+    // ============================================================
+    // 6. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
+    // ============================================================
+    window.ajouterRevenu = async () => {
+      const desc = document.getElementById('revDesc').value.trim();
+      const montant = parseFloat(document.getElementById('revMontant').value);
+      const cat = document.getElementById('revCategorie').value.trim();
+      const date = document.getElementById('revDate').value || dateAujourdhui();
+      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant >0 requis.');
+      const newRev = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      revenus.push(newRev);
+      revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
+      await ecrireRevenus();
+      document.getElementById('revDesc').value = '';
+      document.getElementById('revMontant').value = '';
+      document.getElementById('revCategorie').value = '';
+      document.getElementById('revDate').value = dateAujourdhui();
+    };
+
+    window.ajouterDepense = async () => {
+      const desc = document.getElementById('depDesc').value.trim();
+      const montant = parseFloat(document.getElementById('depMontant').value);
+      const cat = document.getElementById('depCategorie').value.trim();
+      const date = document.getElementById('depDate').value || dateAujourdhui();
+      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant >0 requis.');
+      const newDep = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      depenses.push(newDep);
+      depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
+      await ecrireDepenses();
+      document.getElementById('depDesc').value = '';
+      document.getElementById('depMontant').value = '';
+      document.getElementById('depCategorie').value = '';
+      document.getElementById('depDate').value = dateAujourdhui();
+    };
+
+    window.ajouterPret = async () => {
+      const motif = document.getElementById('pretMotif').value.trim();
+      const total = parseFloat(document.getElementById('pretMontant').value);
+      const remb = parseFloat(document.getElementById('pretRembourse').value) || 0;
+      if (!motif || isNaN(total) || total <= 0) return alert('Motif et montant total >0 requis.');
+      if (remb < 0 || remb > total) return alert('Remboursement entre 0 et total.');
+      const newPret = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), motif, montantTotal: total, montantRembourse: remb };
+      prets.push(newPret);
+      await ecrirePrets();
+      document.getElementById('pretMotif').value = '';
+      document.getElementById('pretMontant').value = '';
+      document.getElementById('pretRembourse').value = '0';
+    };
+
+    window.supprimerRevenu = async (id) => {
+      if (!confirm('Supprimer ce revenu ?')) return;
+      revenus = revenus.filter(r => r.id !== id);
+      await ecrireRevenus();
+    };
+    window.supprimerDepense = async (id) => {
+      if (!confirm('Supprimer cette dépense ?')) return;
+      depenses = depenses.filter(d => d.id !== id);
+      await ecrireDepenses();
+    };
+    window.supprimerPret = async (id) => {
+      if (!confirm('Supprimer ce prêt ?')) return;
+      prets = prets.filter(p => p.id !== id);
+      await ecrirePrets();
+    };
+
+    window.modifierRemboursementPret = async (id) => {
+      const p = prets.find(item => item.id === id);
+      if (!p) return alert('Prêt introuvable.');
+      const nv = prompt(`Prêt : ${p.motif}\nTotal : ${formatMontant(p.montantTotal)}\nNouveau remboursé :`, (p.montantRembourse || 0).toFixed(2));
+      if (nv === null) return;
+      const val = parseFloat(nv.replace(',', '.'));
+      if (isNaN(val) || val < 0 || val > p.montantTotal) return alert('Valeur invalide.');
+      p.montantRembourse = val;
+      await ecrirePrets();
+    };
+
+    // ============================================================
+    // 7. THÈME
+    // ============================================================
+    function applyTheme() {
+      document.body.setAttribute('data-theme', currentTheme);
+      document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☽' : '☀';
+      document.getElementById('themeLabel').textContent = currentTheme === 'dark' ? 'Sombre' : 'Clair';
+    }
+
+    window.toggleTheme = async () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      await ecrireTheme();
+    };
+
+    // ============================================================
+    // 8. ONGLETS
+    // ============================================================
+    window.switchTab = (name) => {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
+      document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('tab-panel--active');
+      document.getElementById('tabBtn' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('tab-btn--active');
+      if (name === 'revenus') renderRevenus();
+      else if (name === 'depenses') renderDepenses();
+      else if (name === 'dettes') renderPrets();
+    };
+
+    // ============================================================
+    // 9. EXPORT / IMPORT JSON
+    // ============================================================
+    window.exportToJSON = () => {
+      const data = { revenus, depenses, prets, exportDate: new Date().toISOString() };
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `budget_data_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    window.importFromJSON = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.revenus || !data.depenses || !data.prets) {
+            alert('Fichier JSON invalide : les clés "revenus", "depenses", "prets" sont requises.');
+            return;
+          }
+          if (!confirm('Ceci va remplacer toutes vos données actuelles. Continuer ?')) return;
+          // Remplacer les tableaux locaux
+          revenus = data.revenus.map(r => ({ ...r, id: r.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
+          depenses = data.depenses.map(d => ({ ...d, id: d.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
+          prets = data.prets.map(p => ({ ...p, id: p.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
+          // Écrire dans RTDB
+          await ecrireRevenus();
+          await ecrireDepenses();
+          await ecrirePrets();
+          // Le listener mettra à jour l'UI automatiquement
+          alert('Données importées avec succès !');
+        } catch (err) {
+          alert('Erreur lors de la lecture du fichier : ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    };
+
+    // ============================================================
+    // 10. EXPORT EXCEL (inchangé)
+    // ============================================================
+    window.exportToExcel = () => {
+      if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
+      const wb = XLSX.utils.book_new();
+      const resume = [
+        ['Gestionnaire de budget de Faniry'],
+        ['Solde', (revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0) - depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0))],
+        ['Revenus', revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0)],
+        ['Dépenses', depenses.reduce((s, d) => s + parseFloat(d.montant || 0), 0)],
+        ['Dette restante', Math.max(0, prets.reduce((s, p) => s + parseFloat(p.montantTotal || 0), 0) - prets.reduce((s, p) => s + parseFloat(p.montantRembourse || 0), 0))]
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Résumé');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(revenus.map(r => ({ Date: r.date, Description: r.description, Catégorie: r.categorie, Montant: r.montant }))), 'Revenus');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(depenses.map(d => ({ Date: d.date, Description: d.description, Catégorie: d.categorie, Montant: d.montant }))), 'Dépenses');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prets.map(p => ({ Motif: p.motif, Total: p.montantTotal, Remboursé: p.montantRembourse, Restant: Math.max(0, p.montantTotal - p.montantRembourse), Progression: p.montantTotal ? Math.round((p.montantRembourse / p.montantTotal) * 100) : 0 }))), 'Prêts Garant');
+      XLSX.writeFile(wb, 'Gestionnaire_de_budget_de_Faniry_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+    };
+
+    // ============================================================
+    // 11. INITIALISATION
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('revDate').value = dateAujourdhui();
+      document.getElementById('depDate').value = dateAujourdhui();
+      startRealtimeListeners();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        const active = document.querySelector('.tab-panel--active');
+        if (active.id === 'panelRevenus') window.ajouterRevenu();
+        if (active.id === 'panelDepenses') window.ajouterDepense();
+        if (active.id === 'panelDettes') window.ajouterPret();
+      }
+    });
+  </script>
+</body>
+</html>
