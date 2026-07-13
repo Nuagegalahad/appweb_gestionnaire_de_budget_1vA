@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestionnaire de budget de Faniry</title>
-  <!-- Firebase SDK (Realtime Database) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -62,7 +61,6 @@
       line-height:1.5;
       min-height:100vh;
       transition: background-color 0.25s ease, color 0.25s ease;
-      -webkit-font-smoothing: antialiased;
     }
     .app-container { max-width:1100px; margin:0 auto; padding:1.5rem 1rem 3rem; }
     .header {
@@ -72,7 +70,6 @@
       box-shadow:var(--shadow);
     }
     .header__title { font-family:var(--font-heading); font-size:1.6rem; letter-spacing:-0.5px; text-transform:uppercase; }
-    .header__subtitle { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); letter-spacing:1px; }
     .header__actions { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
     .btn {
       display:inline-flex; align-items:center; gap:0.4rem;
@@ -168,8 +165,6 @@
     .empty-state { text-align:center; padding:2.5rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.85rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
-    .import-area { margin: 1rem 0; padding: 1rem; border: 3px dashed var(--border); text-align:center; }
-    .import-area input[type="file"] { display: block; margin: 0.5rem auto; }
   </style>
 </head>
 <body data-theme="dark">
@@ -261,12 +256,12 @@
 
   <script>
     // ============================================================
-    // 1. CONFIGURATION FIREBASE (URL CORRIGÉE AVEC RÉGION)
+    // 1. CONFIGURATION FIREBASE
     // ============================================================
     const firebaseConfig = {
       apiKey: "AIzaSyA43XhbbuyH9T4pLplJe9mtiS3a9nQ4RFA",
       authDomain: "budget-faniry-version-1.firebaseapp.com",
-      databaseURL: "https://budget-faniry-version-1-default-rtdb.europe-west1.firebasedatabase.app", // <-- ICI LA BONNE URL
+      databaseURL: "https://budget-faniry-version-1-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "budget-faniry-version-1",
       storageBucket: "budget-faniry-version-1.firebasestorage.app",
       messagingSenderId: "805343864535",
@@ -284,8 +279,14 @@
     let prets = [];
     let currentTheme = 'dark';
 
+    // Références (on utilise push() pour ajouter)
+    const refRevenus = db.ref('revenus');
+    const refDepenses = db.ref('depenses');
+    const refPrets = db.ref('prets');
+    const refTheme = db.ref('config/theme');
+
     // ============================================================
-    // 3. FONCTIONS UTILITAIRES (inchangées)
+    // 3. FONCTIONS UTILITAIRES
     // ============================================================
     function formatMontant(m) { return parseFloat(m).toFixed(2).replace('.', ',') + ' €'; }
     function formatDate(d) {
@@ -302,30 +303,40 @@
       div.textContent = str;
       return div.innerHTML;
     }
+    // Génère un ID unique (chaîne)
+    function genId() {
+      return Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 8);
+    }
 
     // ============================================================
-    // 4. SYNCHRONISATION AVEC REALTIME DATABASE
+    // 4. FONCTIONS D'ÉCRITURE (utilisation de push/remove)
     // ============================================================
-    const refRevenus = db.ref('revenus');
-    const refDepenses = db.ref('depenses');
-    const refPrets = db.ref('prets');
-    const refTheme = db.ref('config/theme');
-
-    // Fonctions d'écriture (remplacement complet)
-    async function ecrireRevenus() {
-      const obj = {};
-      revenus.forEach(r => { obj[r.id] = r; });
-      await refRevenus.set(obj);
+    async function ajouterRevenuFirebase(rev) {
+      const newRef = refRevenus.push();
+      await newRef.set(rev);
+      return newRef.key;
     }
-    async function ecrireDepenses() {
-      const obj = {};
-      depenses.forEach(d => { obj[d.id] = d; });
-      await refDepenses.set(obj);
+    async function supprimerRevenuFirebase(id) {
+      await refRevenus.child(id).remove();
     }
-    async function ecrirePrets() {
-      const obj = {};
-      prets.forEach(p => { obj[p.id] = p; });
-      await refPrets.set(obj);
+    async function ajouterDepenseFirebase(dep) {
+      const newRef = refDepenses.push();
+      await newRef.set(dep);
+      return newRef.key;
+    }
+    async function supprimerDepenseFirebase(id) {
+      await refDepenses.child(id).remove();
+    }
+    async function ajouterPretFirebase(pret) {
+      const newRef = refPrets.push();
+      await newRef.set(pret);
+      return newRef.key;
+    }
+    async function supprimerPretFirebase(id) {
+      await refPrets.child(id).remove();
+    }
+    async function modifierPretFirebase(id, newData) {
+      await refPrets.child(id).update(newData);
     }
     async function ecrireTheme() {
       await refTheme.set(currentTheme);
@@ -337,11 +348,11 @@
     function chargerDonneesInitiales() {
       console.log('Chargement initial des données...');
 
-      // 1. Revenus
       refRevenus.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          revenus = Object.values(data);
+          // Transformer l'objet { clé: valeur } en tableau avec la clé comme id
+          revenus = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
           console.log(`✅ ${revenus.length} revenus chargés.`);
         } else {
@@ -351,11 +362,10 @@
         updateAll();
       }).catch(err => console.error('❌ Erreur lecture revenus :', err));
 
-      // 2. Dépenses
       refDepenses.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          depenses = Object.values(data);
+          depenses = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
           console.log(`✅ ${depenses.length} dépenses chargées.`);
         } else {
@@ -365,11 +375,10 @@
         updateAll();
       }).catch(err => console.error('❌ Erreur lecture depenses :', err));
 
-      // 3. Prêts
       refPrets.once('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          prets = Object.values(data);
+          prets = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           console.log(`✅ ${prets.length} prêts chargés.`);
         } else {
           prets = [];
@@ -378,7 +387,6 @@
         updateAll();
       }).catch(err => console.error('❌ Erreur lecture prets :', err));
 
-      // 4. Thème
       refTheme.once('value', snapshot => {
         const val = snapshot.val();
         if (val) {
@@ -387,7 +395,7 @@
         }
       }).catch(err => console.error('❌ Erreur lecture theme :', err));
 
-      // 5. Lancer les listeners en temps réel (pour les mises à jour ultérieures)
+      // Listeners en temps réel
       startRealtimeListeners();
     }
 
@@ -397,7 +405,7 @@
       refRevenus.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          revenus = Object.values(data);
+          revenus = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
         } else {
           revenus = [];
@@ -408,7 +416,7 @@
       refDepenses.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          depenses = Object.values(data);
+          depenses = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
           depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
         } else {
           depenses = [];
@@ -419,7 +427,7 @@
       refPrets.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
-          prets = Object.values(data);
+          prets = Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
         } else {
           prets = [];
         }
@@ -436,7 +444,7 @@
     }
 
     // ============================================================
-    // 6. RENDU UI (inchangé)
+    // 6. RENDU UI (inchangé, mais on utilise _firebaseKey pour les actions)
     // ============================================================
     function updateDashboard() {
       const totalRev = revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0);
@@ -498,7 +506,7 @@
             <td>${escapeHTML(r.description)}</td>
             <td><span class="badge">${escapeHTML(r.categorie || 'Sans catégorie')}</span></td>
             <td class="amount-cell">${formatMontant(r.montant)}</td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r.id}')">×</button></td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r._firebaseKey}')">×</button></td>
           </tr>
         `).join('');
       }
@@ -517,7 +525,7 @@
             <td>${escapeHTML(d.description)}</td>
             <td><span class="badge">${escapeHTML(d.categorie || 'Sans catégorie')}</span></td>
             <td class="amount-cell">${formatMontant(d.montant)}</td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d.id}')">×</button></td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
           </tr>
         `).join('');
       }
@@ -539,10 +547,10 @@
           <tr>
             <td>${escapeHTML(p.motif)}</td>
             <td class="amount-cell">${formatMontant(total)}</td>
-            <td class="amount-cell">${formatMontant(remb)} <button class="btn btn--sm" onclick="modifierRemboursementPret('${p.id}')">✎</button></td>
+            <td class="amount-cell">${formatMontant(remb)} <button class="btn btn--sm" onclick="modifierRemboursementPret('${p._firebaseKey}')">✎</button></td>
             <td class="amount-cell">${formatMontant(rest)}</td>
             <td><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" style="width:${pct}%;"></div></div><span class="progress-text">${pct}%</span></div></td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerPret('${p.id}')">×</button></td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerPret('${p._firebaseKey}')">×</button></td>
           </tr>`;
         }).join('');
       }
@@ -568,76 +576,135 @@
     // 7. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
     // ============================================================
     window.ajouterRevenu = async () => {
+      console.log('▶️ ajouterRevenu appelé');
       const desc = document.getElementById('revDesc').value.trim();
       const montant = parseFloat(document.getElementById('revMontant').value);
       const cat = document.getElementById('revCategorie').value.trim();
       const date = document.getElementById('revDate').value || dateAujourdhui();
-      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant >0 requis.');
-      const newRev = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), description: desc, montant, categorie: cat || 'Sans catégorie', date };
-      revenus.push(newRev);
-      revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
-      await ecrireRevenus();
-      document.getElementById('revDesc').value = '';
-      document.getElementById('revMontant').value = '';
-      document.getElementById('revCategorie').value = '';
-      document.getElementById('revDate').value = dateAujourdhui();
+      if (!desc || isNaN(montant) || montant <= 0) {
+        alert('Description et montant >0 requis.');
+        return;
+      }
+      const newRev = { description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      console.log('📦 Nouveau revenu:', newRev);
+      try {
+        const key = await ajouterRevenuFirebase(newRev);
+        console.log('✅ Revenu ajouté avec clé:', key);
+        // Le listener mettra à jour automatiquement l'UI
+        // On vide les champs après l'écriture réussie
+        document.getElementById('revDesc').value = '';
+        document.getElementById('revMontant').value = '';
+        document.getElementById('revCategorie').value = '';
+        document.getElementById('revDate').value = dateAujourdhui();
+      } catch (err) {
+        console.error('❌ Erreur ajout revenu:', err);
+        alert('Erreur lors de l\'ajout du revenu : ' + err.message);
+      }
     };
 
     window.ajouterDepense = async () => {
+      console.log('▶️ ajouterDepense appelé');
       const desc = document.getElementById('depDesc').value.trim();
       const montant = parseFloat(document.getElementById('depMontant').value);
       const cat = document.getElementById('depCategorie').value.trim();
       const date = document.getElementById('depDate').value || dateAujourdhui();
-      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant >0 requis.');
-      const newDep = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), description: desc, montant, categorie: cat || 'Sans catégorie', date };
-      depenses.push(newDep);
-      depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
-      await ecrireDepenses();
-      document.getElementById('depDesc').value = '';
-      document.getElementById('depMontant').value = '';
-      document.getElementById('depCategorie').value = '';
-      document.getElementById('depDate').value = dateAujourdhui();
+      if (!desc || isNaN(montant) || montant <= 0) {
+        alert('Description et montant >0 requis.');
+        return;
+      }
+      const newDep = { description: desc, montant, categorie: cat || 'Sans catégorie', date };
+      try {
+        const key = await ajouterDepenseFirebase(newDep);
+        console.log('✅ Dépense ajoutée avec clé:', key);
+        document.getElementById('depDesc').value = '';
+        document.getElementById('depMontant').value = '';
+        document.getElementById('depCategorie').value = '';
+        document.getElementById('depDate').value = dateAujourdhui();
+      } catch (err) {
+        console.error('❌ Erreur ajout dépense:', err);
+        alert('Erreur lors de l\'ajout de la dépense : ' + err.message);
+      }
     };
 
     window.ajouterPret = async () => {
+      console.log('▶️ ajouterPret appelé');
       const motif = document.getElementById('pretMotif').value.trim();
       const total = parseFloat(document.getElementById('pretMontant').value);
       const remb = parseFloat(document.getElementById('pretRembourse').value) || 0;
-      if (!motif || isNaN(total) || total <= 0) return alert('Motif et montant total >0 requis.');
-      if (remb < 0 || remb > total) return alert('Remboursement entre 0 et total.');
-      const newPret = { id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6), motif, montantTotal: total, montantRembourse: remb };
-      prets.push(newPret);
-      await ecrirePrets();
-      document.getElementById('pretMotif').value = '';
-      document.getElementById('pretMontant').value = '';
-      document.getElementById('pretRembourse').value = '0';
+      if (!motif || isNaN(total) || total <= 0) {
+        alert('Motif et montant total >0 requis.');
+        return;
+      }
+      if (remb < 0 || remb > total) {
+        alert('Remboursement entre 0 et total.');
+        return;
+      }
+      const newPret = { motif, montantTotal: total, montantRembourse: remb };
+      try {
+        const key = await ajouterPretFirebase(newPret);
+        console.log('✅ Prêt ajouté avec clé:', key);
+        document.getElementById('pretMotif').value = '';
+        document.getElementById('pretMontant').value = '';
+        document.getElementById('pretRembourse').value = '0';
+      } catch (err) {
+        console.error('❌ Erreur ajout prêt:', err);
+        alert('Erreur lors de l\'ajout du prêt : ' + err.message);
+      }
     };
 
-    window.supprimerRevenu = async (id) => {
+    window.supprimerRevenu = async (key) => {
       if (!confirm('Supprimer ce revenu ?')) return;
-      revenus = revenus.filter(r => r.id !== id);
-      await ecrireRevenus();
-    };
-    window.supprimerDepense = async (id) => {
-      if (!confirm('Supprimer cette dépense ?')) return;
-      depenses = depenses.filter(d => d.id !== id);
-      await ecrireDepenses();
-    };
-    window.supprimerPret = async (id) => {
-      if (!confirm('Supprimer ce prêt ?')) return;
-      prets = prets.filter(p => p.id !== id);
-      await ecrirePrets();
+      try {
+        await supprimerRevenuFirebase(key);
+        console.log('✅ Revenu supprimé');
+      } catch (err) {
+        console.error('❌ Erreur suppression revenu:', err);
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
     };
 
-    window.modifierRemboursementPret = async (id) => {
-      const p = prets.find(item => item.id === id);
-      if (!p) return alert('Prêt introuvable.');
+    window.supprimerDepense = async (key) => {
+      if (!confirm('Supprimer cette dépense ?')) return;
+      try {
+        await supprimerDepenseFirebase(key);
+        console.log('✅ Dépense supprimée');
+      } catch (err) {
+        console.error('❌ Erreur suppression dépense:', err);
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
+    };
+
+    window.supprimerPret = async (key) => {
+      if (!confirm('Supprimer ce prêt ?')) return;
+      try {
+        await supprimerPretFirebase(key);
+        console.log('✅ Prêt supprimé');
+      } catch (err) {
+        console.error('❌ Erreur suppression prêt:', err);
+        alert('Erreur lors de la suppression : ' + err.message);
+      }
+    };
+
+    window.modifierRemboursementPret = async (key) => {
+      const p = prets.find(item => item._firebaseKey === key);
+      if (!p) {
+        alert('Prêt introuvable.');
+        return;
+      }
       const nv = prompt(`Prêt : ${p.motif}\nTotal : ${formatMontant(p.montantTotal)}\nNouveau remboursé :`, (p.montantRembourse || 0).toFixed(2));
       if (nv === null) return;
       const val = parseFloat(nv.replace(',', '.'));
-      if (isNaN(val) || val < 0 || val > p.montantTotal) return alert('Valeur invalide.');
-      p.montantRembourse = val;
-      await ecrirePrets();
+      if (isNaN(val) || val < 0 || val > p.montantTotal) {
+        alert('Valeur invalide.');
+        return;
+      }
+      try {
+        await modifierPretFirebase(key, { montantRembourse: val });
+        console.log('✅ Remboursement mis à jour');
+      } catch (err) {
+        console.error('❌ Erreur modification remboursement:', err);
+        alert('Erreur lors de la modification : ' + err.message);
+      }
     };
 
     // ============================================================
@@ -669,10 +736,16 @@
     };
 
     // ============================================================
-    // 10. EXPORT / IMPORT JSON
+    // 10. EXPORT / IMPORT JSON (adapté pour les clés Firebase)
     // ============================================================
     window.exportToJSON = () => {
-      const data = { revenus, depenses, prets, exportDate: new Date().toISOString() };
+      // On exporte les données sans les clés internes _firebaseKey
+      const data = {
+        revenus: revenus.map(({ _firebaseKey, ...r }) => r),
+        depenses: depenses.map(({ _firebaseKey, ...d }) => d),
+        prets: prets.map(({ _firebaseKey, ...p }) => p),
+        exportDate: new Date().toISOString()
+      };
       const json = JSON.stringify(data, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -695,14 +768,20 @@
             return;
           }
           if (!confirm('Ceci va remplacer toutes vos données actuelles. Continuer ?')) return;
-          // Remplacer les tableaux locaux
-          revenus = data.revenus.map(r => ({ ...r, id: r.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
-          depenses = data.depenses.map(d => ({ ...d, id: d.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
-          prets = data.prets.map(p => ({ ...p, id: p.id || Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) }));
-          // Écrire dans RTDB
-          await ecrireRevenus();
-          await ecrireDepenses();
-          await ecrirePrets();
+          // On vide complètement les nœuds existants
+          await refRevenus.set(null);
+          await refDepenses.set(null);
+          await refPrets.set(null);
+          // Puis on ajoute chaque élément avec push()
+          for (const r of data.revenus) {
+            await refRevenus.push(r);
+          }
+          for (const d of data.depenses) {
+            await refDepenses.push(d);
+          }
+          for (const p of data.prets) {
+            await refPrets.push(p);
+          }
           alert('Données importées avec succès !');
         } catch (err) {
           alert('Erreur lors de la lecture du fichier : ' + err.message);
@@ -738,8 +817,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('revDate').value = dateAujourdhui();
       document.getElementById('depDate').value = dateAujourdhui();
-      
-      // Chargement initial via once() + écoute en temps réel
       chargerDonneesInitiales();
     });
 
