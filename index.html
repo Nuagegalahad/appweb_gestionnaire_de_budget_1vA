@@ -261,12 +261,12 @@
 
   <script>
     // ============================================================
-    // 1. CONFIGURATION FIREBASE (Realtime Database)
+    // 1. CONFIGURATION FIREBASE (URL CORRIGÉE AVEC RÉGION)
     // ============================================================
     const firebaseConfig = {
       apiKey: "AIzaSyA43XhbbuyH9T4pLplJe9mtiS3a9nQ4RFA",
       authDomain: "budget-faniry-version-1.firebaseapp.com",
-      databaseURL: "https://budget-faniry-version-1-default-rtdb.firebaseio.com", // <-- Vérifiez cette URL
+      databaseURL: "https://budget-faniry-version-1-default-rtdb.europe-west1.firebasedatabase.app", // <-- ICI LA BONNE URL
       projectId: "budget-faniry-version-1",
       storageBucket: "budget-faniry-version-1.firebasestorage.app",
       messagingSenderId: "805343864535",
@@ -274,7 +274,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database(); // Référence à la Realtime Database
+    const db = firebase.database();
 
     // ============================================================
     // 2. ÉTAT LOCAL
@@ -304,7 +304,7 @@
     }
 
     // ============================================================
-    // 4. SYNCHRONISATION AVEC REALTIME DATABASE (ÉCOUTE EN TEMPS RÉEL)
+    // 4. SYNCHRONISATION AVEC REALTIME DATABASE
     // ============================================================
     const refRevenus = db.ref('revenus');
     const refDepenses = db.ref('depenses');
@@ -313,7 +313,6 @@
 
     // Fonctions d'écriture (remplacement complet)
     async function ecrireRevenus() {
-      // Transformer le tableau en objet avec l'ID comme clé (nécessaire pour RTDB)
       const obj = {};
       revenus.forEach(r => { obj[r.id] = r; });
       await refRevenus.set(obj);
@@ -332,9 +331,69 @@
       await refTheme.set(currentTheme);
     }
 
-    // Écoute en temps réel (remplace startRealtimeListeners)
+    // ============================================================
+    // 5. CHARGEMENT INITIAL ET ÉCOUTE EN TEMPS RÉEL
+    // ============================================================
+    function chargerDonneesInitiales() {
+      console.log('Chargement initial des données...');
+
+      // 1. Revenus
+      refRevenus.once('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          revenus = Object.values(data);
+          revenus.sort((a,b) => new Date(b.date) - new Date(a.date));
+          console.log(`✅ ${revenus.length} revenus chargés.`);
+        } else {
+          revenus = [];
+          console.log('ℹ️ Aucun revenu trouvé.');
+        }
+        updateAll();
+      }).catch(err => console.error('❌ Erreur lecture revenus :', err));
+
+      // 2. Dépenses
+      refDepenses.once('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          depenses = Object.values(data);
+          depenses.sort((a,b) => new Date(b.date) - new Date(a.date));
+          console.log(`✅ ${depenses.length} dépenses chargées.`);
+        } else {
+          depenses = [];
+          console.log('ℹ️ Aucune dépense trouvée.');
+        }
+        updateAll();
+      }).catch(err => console.error('❌ Erreur lecture depenses :', err));
+
+      // 3. Prêts
+      refPrets.once('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          prets = Object.values(data);
+          console.log(`✅ ${prets.length} prêts chargés.`);
+        } else {
+          prets = [];
+          console.log('ℹ️ Aucun prêt trouvé.');
+        }
+        updateAll();
+      }).catch(err => console.error('❌ Erreur lecture prets :', err));
+
+      // 4. Thème
+      refTheme.once('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+          currentTheme = val;
+          applyTheme();
+        }
+      }).catch(err => console.error('❌ Erreur lecture theme :', err));
+
+      // 5. Lancer les listeners en temps réel (pour les mises à jour ultérieures)
+      startRealtimeListeners();
+    }
+
     function startRealtimeListeners() {
-      // Revenus
+      console.log('Démarrage des listeners en temps réel...');
+
       refRevenus.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
@@ -344,9 +403,8 @@
           revenus = [];
         }
         updateAll();
-      }, error => console.error('Erreur écoute revenus:', error));
+      }, error => console.error('❌ Erreur écoute revenus:', error));
 
-      // Dépenses
       refDepenses.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
@@ -356,9 +414,8 @@
           depenses = [];
         }
         updateAll();
-      }, error => console.error('Erreur écoute depenses:', error));
+      }, error => console.error('❌ Erreur écoute depenses:', error));
 
-      // Prêts
       refPrets.on('value', snapshot => {
         const data = snapshot.val();
         if (data) {
@@ -367,20 +424,19 @@
           prets = [];
         }
         updateAll();
-      }, error => console.error('Erreur écoute prets:', error));
+      }, error => console.error('❌ Erreur écoute prets:', error));
 
-      // Thème
       refTheme.on('value', snapshot => {
         const val = snapshot.val();
         if (val) {
           currentTheme = val;
           applyTheme();
         }
-      }, error => console.error('Erreur écoute theme:', error));
+      }, error => console.error('❌ Erreur écoute theme:', error));
     }
 
     // ============================================================
-    // 5. RENDU UI (inchangé)
+    // 6. RENDU UI (inchangé)
     // ============================================================
     function updateDashboard() {
       const totalRev = revenus.reduce((s, r) => s + parseFloat(r.montant || 0), 0);
@@ -509,7 +565,7 @@
     }
 
     // ============================================================
-    // 6. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
+    // 7. ACTIONS UTILISATEUR (AJOUT, SUPPRESSION, MODIFICATION)
     // ============================================================
     window.ajouterRevenu = async () => {
       const desc = document.getElementById('revDesc').value.trim();
@@ -585,7 +641,7 @@
     };
 
     // ============================================================
-    // 7. THÈME
+    // 8. THÈME
     // ============================================================
     function applyTheme() {
       document.body.setAttribute('data-theme', currentTheme);
@@ -600,7 +656,7 @@
     };
 
     // ============================================================
-    // 8. ONGLETS
+    // 9. ONGLETS
     // ============================================================
     window.switchTab = (name) => {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
@@ -613,7 +669,7 @@
     };
 
     // ============================================================
-    // 9. EXPORT / IMPORT JSON
+    // 10. EXPORT / IMPORT JSON
     // ============================================================
     window.exportToJSON = () => {
       const data = { revenus, depenses, prets, exportDate: new Date().toISOString() };
@@ -647,7 +703,6 @@
           await ecrireRevenus();
           await ecrireDepenses();
           await ecrirePrets();
-          // Le listener mettra à jour l'UI automatiquement
           alert('Données importées avec succès !');
         } catch (err) {
           alert('Erreur lors de la lecture du fichier : ' + err.message);
@@ -658,7 +713,7 @@
     };
 
     // ============================================================
-    // 10. EXPORT EXCEL (inchangé)
+    // 11. EXPORT EXCEL (inchangé)
     // ============================================================
     window.exportToExcel = () => {
       if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
@@ -678,12 +733,14 @@
     };
 
     // ============================================================
-    // 11. INITIALISATION
+    // 12. INITIALISATION
     // ============================================================
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('revDate').value = dateAujourdhui();
       document.getElementById('depDate').value = dateAujourdhui();
-      startRealtimeListeners();
+      
+      // Chargement initial via once() + écoute en temps réel
+      chargerDonneesInitiales();
     });
 
     document.addEventListener('keydown', e => {
