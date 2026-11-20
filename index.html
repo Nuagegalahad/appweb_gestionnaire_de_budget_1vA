@@ -786,29 +786,10 @@
       return round2(toNum(m[bucket]));
     }
 
-    // Calculs mensuels (repartent a 0 chaque mois) & globaux (Wish List + Dettes)
+    // Calculs strictement synchronises avec les onglets visibles (zero depense fantome)
     function getRevenusMoisList(ym) { return revenus.filter(r => estDansMois(r.date, ym)); }
-    function getDepensesMoisList(ym) { return depenses.filter(d => estDansMois(d.date, ym)); }
     function getTotalRevenusMois(ym) { return round2(getRevenusMoisList(ym).reduce((s, r) => s + toNum(r.montant), 0)); }
-    function getTotalDepensesMois(ym) { return round2(getDepensesMoisList(ym).reduce((s, d) => s + toNum(d.montant), 0)); }
-    function getSoldeMois(ym) { return round2(getTotalRevenusMois(ym) - getTotalDepensesMois(ym)); }
 
-    function getDepotCagnotteMois(c, ym) {
-      if (!c.depotsParMois || c.depotsParMois[ym] == null) return 0;
-      return round2(toNum(c.depotsParMois[ym]));
-    }
-    function getTotalDepotsCagnottesMois(ym) {
-      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + getDepotCagnotteMois(c, ym), 0));
-    }
-    function getTotalCagnottesCumuleActives() {
-      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + toNum(c.montantDepose), 0));
-    }
-    function getTotalWishListActif() {
-      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + toNum(c.objectif), 0));
-    }
-    function getRestantAFinancerWishList() {
-      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
-    }
     function isFixePaye(f, ym) {
       return !!(f.paiements && f.paiements[ym]);
     }
@@ -827,8 +808,55 @@
     function getFixesRestantsMois(ym) {
       return round2(depensesFixes.filter(f => !isFixePaye(f, ym)).reduce((s, f) => s + toNum(f.montant), 0));
     }
+    function getDepFixesSurSoldeMois(ym) {
+      return round2(
+        depensesFixes
+          .filter(f => isFixePaye(f, ym) && !isFixeHorsSolde(f, ym))
+          .reduce((s, f) => s + getMontantFixePayeMois(f, ym), 0)
+      );
+    }
     function getDepensesBucketMois(bucket, ym) {
       return depenses.filter(d => getBucketDepense(d) === bucket && estDansMois(d.date, ym));
+    }
+    function getDepPlafondsMois(ym) {
+      const v = getDepensesBucketMois('vivres', ym).reduce((s, d) => s + toNum(d.montant), 0);
+      const so = getDepensesBucketMois('sorties', ym).reduce((s, d) => s + toNum(d.montant), 0);
+      return round2(v + so);
+    }
+    function getDepCagnottesAcheteesMois(ym) {
+      return round2(
+        cagnottes
+          .filter(c => c.achete && estDansMois(c.dateAchat, ym))
+          .reduce((s, c) => {
+            const linked = c.depenseKey ? depenses.find(d => d._firebaseKey === c.depenseKey) : null;
+            return s + (linked ? toNum(linked.montant) : toNum(c.prixReel != null ? c.prixReel : c.montantDepose));
+          }, 0)
+      );
+    }
+    function getTotalDepensesMois(ym) {
+      return round2(
+        getDepFixesSurSoldeMois(ym) +
+        getDepPlafondsMois(ym) +
+        getDepCagnottesAcheteesMois(ym)
+      );
+    }
+    function getSoldeMois(ym) { return round2(getTotalRevenusMois(ym) - getTotalDepensesMois(ym)); }
+
+    function getDepotCagnotteMois(c, ym) {
+      if (!c.depotsParMois || c.depotsParMois[ym] == null) return 0;
+      return round2(toNum(c.depotsParMois[ym]));
+    }
+    function getTotalDepotsCagnottesMois(ym) {
+      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + getDepotCagnotteMois(c, ym), 0));
+    }
+    function getTotalCagnottesCumuleActives() {
+      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + toNum(c.montantDepose), 0));
+    }
+    function getTotalWishListActif() {
+      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + toNum(c.objectif), 0));
+    }
+    function getRestantAFinancerWishList() {
+      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
     }
     function getResteLibreMois(ym) {
       return round2(getSoldeMois(ym) - getFixesRestantsMois(ym) - getTotalDepotsCagnottesMois(ym));
@@ -922,6 +950,9 @@
 
       const revListMois = getRevenusMoisList(selectedMonth);
       const revMois = getTotalRevenusMois(selectedMonth);
+      const depFixesSurSolde = getDepFixesSurSoldeMois(selectedMonth);
+      const depPlafondsMois = getDepPlafondsMois(selectedMonth);
+      const depWishMois = getDepCagnottesAcheteesMois(selectedMonth);
       const depMois = getTotalDepensesMois(selectedMonth);
       const soldeMois = getSoldeMois(selectedMonth);
       const fixesRest = getFixesRestantsMois(selectedMonth);
@@ -930,16 +961,6 @@
 
       const totWish = getTotalWishListActif();
       const resteSiWish = getResteLibreSiToutWishAchete(selectedMonth);
-
-      const depFixesSurSolde = round2(
-        depensesFixes
-          .filter(f => isFixePaye(f, selectedMonth) && !isFixeHorsSolde(f, selectedMonth))
-          .reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0)
-      );
-      const depPlafondsMois = round2(
-        getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0) +
-        getDepensesBucketMois('sorties', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0)
-      );
 
       const totPret = prets.reduce((s, p) => s + toNum(p.montantTotal), 0);
       const totRemb = prets.reduce((s, p) => s + toNum(p.montantRembourse), 0);
@@ -964,8 +985,9 @@
         revListMois.length + (revListMois.length > 1 ? ' entrees ce mois' : ' entree ce mois');
 
       document.getElementById('cardDepensesMois').textContent = formatMontant(depMois);
-      document.getElementById('cardDepensesSub').textContent =
-        'Fixes : ' + formatMontant(depFixesSurSolde) + ' | Plafonds : ' + formatMontant(depPlafondsMois);
+      let depSub = 'Fixes : ' + formatMontant(depFixesSurSolde) + ' | Plafonds : ' + formatMontant(depPlafondsMois);
+      if (depWishMois > 0) depSub += ' | Wish : ' + formatMontant(depWishMois);
+      document.getElementById('cardDepensesSub').textContent = depSub;
 
       document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totPret - totRemb));
     }
@@ -1003,7 +1025,7 @@
       }).join('');
     }
 
-    // 2. Rendu Depenses Fixes (avec Option A : Paye normal OU Hors solde)
+    // 2. Rendu Depenses Fixes (Option A : Paye normal OU Hors solde)
     function renderFixes() {
       const paye = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0));
       const restant = getFixesRestantsMois(selectedMonth);
@@ -1299,7 +1321,30 @@
       await safeWrite(() => refRevenus.child(key).remove());
     };
 
-    // Depenses Fixes
+    // Depenses Fixes (nettoyage automatique des depenses liees)
+    async function supprimerDepensesLieesFixe(key, ymOnly) {
+      const f = depensesFixes.find(item => item._firebaseKey === key);
+      const keysToDelete = new Set();
+      if (f && f.paiements) {
+        if (ymOnly) {
+          const dk = f.paiements[ymOnly];
+          if (dk && typeof dk === 'string' && dk !== HORS_SOLDE_VAL) keysToDelete.add(dk);
+        } else {
+          Object.values(f.paiements).forEach(dk => {
+            if (dk && typeof dk === 'string' && dk !== HORS_SOLDE_VAL) keysToDelete.add(dk);
+          });
+        }
+      }
+      depenses.forEach(d => {
+        if (d.fixeKey === key && (!ymOnly || estDansMois(d.date, ymOnly))) {
+          keysToDelete.add(d._firebaseKey);
+        }
+      });
+      for (const dk of keysToDelete) {
+        await refDepenses.child(dk).remove();
+      }
+    }
+
     window.preremplirChargesFixes = async () => {
       const defaults = [
         'Loyer', 'Assurance habitation', 'Assurance trottinette',
@@ -1357,6 +1402,7 @@
       if (!f) return;
 
       if (checked) {
+        if (isFixePaye(f, selectedMonth)) return;
         let montantAPayer = round2(f.montant);
         if (montantAPayer <= 0) {
           const s = prompt(`Montant paye pour "${f.nom}" ce mois (€) :`);
@@ -1367,6 +1413,7 @@
           await safeWrite(() => refFixes.child(key).update({ montant: montantAPayer }));
         }
         await safeWrite(async () => {
+          await supprimerDepensesLieesFixe(key, selectedMonth);
           const depRef = refDepenses.push();
           await depRef.set({
             description: f.nom + ' (' + formatMoisLabel(selectedMonth) + ')',
@@ -1379,15 +1426,12 @@
           await refFixes.child(key).child('paiements').child(selectedMonth).set(depRef.key);
         });
       } else {
-        const depKey = f.paiements && f.paiements[selectedMonth];
         if (!confirm(`Remettre "${f.nom}" en "A payer" pour ${formatMoisLabel(selectedMonth)} ?`)) {
           renderFixes();
           return;
         }
         await safeWrite(async () => {
-          if (depKey && typeof depKey === 'string' && depKey !== HORS_SOLDE_VAL) {
-            await refDepenses.child(depKey).remove();
-          }
+          await supprimerDepensesLieesFixe(key, selectedMonth);
           await refFixes.child(key).child('paiements').child(selectedMonth).remove();
         });
       }
@@ -1396,18 +1440,18 @@
     window.marquerHorsSoldeFixe = async (key) => {
       const f = depensesFixes.find(item => item._firebaseKey === key);
       if (!f) return;
-      const depKey = f.paiements && f.paiements[selectedMonth];
       await safeWrite(async () => {
-        if (depKey && typeof depKey === 'string' && depKey !== HORS_SOLDE_VAL) {
-          await refDepenses.child(depKey).remove();
-        }
+        await supprimerDepensesLieesFixe(key, selectedMonth);
         await refFixes.child(key).child('paiements').child(selectedMonth).set(HORS_SOLDE_VAL);
       });
     };
 
     window.supprimerChargeFixe = async (key) => {
-      if (!confirm('Supprimer cette charge fixe de la liste ?')) return;
-      await safeWrite(() => refFixes.child(key).remove());
+      if (!confirm('Supprimer cette charge fixe (et ses paiements associes) ?')) return;
+      await safeWrite(async () => {
+        await supprimerDepensesLieesFixe(key, null);
+        await refFixes.child(key).remove();
+      });
     };
 
     // Depenses a plafond (reinitialises chaque mois) & Edition depenses
@@ -1560,7 +1604,7 @@
       });
     };
 
-    // Cagnottes (cumulees + suivi des depots par mois)
+    // Cagnottes (cumulees + suivi des depots par mois + nettoyage automatique)
     window.ajouterCagnotte = async () => {
       const nom = document.getElementById('cagNom').value.trim();
       const type = document.getElementById('cagType').value;
@@ -1617,8 +1661,21 @@
       if (val <= 0) return alert('Montant invalide.');
       const d = defaultDateForMonth();
       await safeWrite(async () => {
-        await refDepenses.push({ description: c.nom, montant: round2(val), categorie: 'Cagnotte / Wish List', bucket: 'cagnotte', date: d });
-        await refCagnottes.child(key).update({ achete: true, prixReel: round2(val), dateAchat: d });
+        const depRef = refDepenses.push();
+        await depRef.set({
+          description: c.nom,
+          montant: round2(val),
+          categorie: 'Cagnotte / Wish List',
+          bucket: 'cagnotte',
+          cagnotteKey: key,
+          date: d
+        });
+        await refCagnottes.child(key).update({
+          achete: true,
+          prixReel: round2(val),
+          dateAchat: d,
+          depenseKey: depRef.key
+        });
       });
     };
 
@@ -1658,7 +1715,18 @@
 
     window.supprimerCagnotte = async (key) => {
       if (!confirm('Supprimer cette cagnotte ?')) return;
-      await safeWrite(() => refCagnottes.child(key).remove());
+      const c = cagnottes.find(item => item._firebaseKey === key);
+      await safeWrite(async () => {
+        const keysToDelete = new Set();
+        if (c && c.depenseKey) keysToDelete.add(c.depenseKey);
+        depenses.forEach(d => {
+          if (d.cagnotteKey === key) keysToDelete.add(d._firebaseKey);
+        });
+        for (const dk of keysToDelete) {
+          await refDepenses.child(dk).remove();
+        }
+        await refCagnottes.child(key).remove();
+      });
     };
 
     // Dettes (Global)
