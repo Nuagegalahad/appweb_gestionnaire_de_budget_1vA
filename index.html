@@ -306,32 +306,32 @@
       </div>
     </header>
 
-    <!-- DASHBOARD 6 CARTES -->
+    <!-- DASHBOARD 6 CARTES (MENSUEL SAUF WISH LIST & DETTES) -->
     <section class="dashboard">
       <div class="card card--solde">
-        <p class="card__label">Solde reel</p>
+        <p class="card__label">Solde (<span class="lbl-mois">mois</span>)</p>
         <p class="card__amount" id="cardSolde">0,00 €</p>
-        <p class="card__sub">Revenus globaux - Depenses globales</p>
+        <p class="card__sub">Revenus - Depenses du mois</p>
       </div>
       <div class="card card--libre">
-        <p class="card__label">Reste libre</p>
+        <p class="card__label">Reste libre (<span class="lbl-mois">mois</span>)</p>
         <p class="card__amount" id="cardLibre">0,00 €</p>
-        <p class="card__sub" id="cardLibreSub">Apres cagnottes &amp; fixes a payer</p>
+        <p class="card__sub" id="cardLibreSub">Fixes : 0,00 € | Cagnottes (mois) : 0,00 €</p>
       </div>
       <div class="card card--cagnotte">
-        <p class="card__label">Total Cagnottes</p>
-        <p class="card__amount" id="cardCagnottes">0,00 €</p>
-        <p class="card__sub">Wish list + Livret A (actives)</p>
+        <p class="card__label">Total Wish List</p>
+        <p class="card__amount" id="cardWishList">0,00 €</p>
+        <p class="card__sub">Reste libre si tout achete : <strong id="cardWishResteLibre">0,00 €</strong></p>
       </div>
       <div class="card card--revenu">
         <p class="card__label">Revenus (<span class="lbl-mois">mois</span>)</p>
         <p class="card__amount" id="cardRevenusMois">0,00 €</p>
-        <p class="card__sub" id="cardRevenusGlobal">Total global : 0,00 €</p>
+        <p class="card__sub" id="cardRevenusSub">0 entree ce mois</p>
       </div>
       <div class="card card--depense">
         <p class="card__label">Depenses (<span class="lbl-mois">mois</span>)</p>
         <p class="card__amount" id="cardDepensesMois">0,00 €</p>
-        <p class="card__sub" id="cardDepensesGlobal">Total global : 0,00 €</p>
+        <p class="card__sub" id="cardDepensesSub">Fixes : 0,00 € | Plafonds : 0,00 €</p>
       </div>
       <div class="card card--dette">
         <p class="card__label">Dette restante</p>
@@ -586,9 +586,10 @@
     <!-- ONGLET 4 : CAGNOTTES -->
     <section class="tab-panel" id="panelCagnottes">
       <div class="summary-strip">
-        <div><strong>Reste libre a repartir :</strong> <span id="cagResteLibre" style="font-weight:900;">0,00 €</span></div>
-        <div><strong>Total depose (actives) :</strong> <span id="cagTotalDepose">0,00 €</span></div>
-        <div><strong>Objectif restant (Wish List) :</strong> <span id="cagObjectifRestant">0,00 €</span></div>
+        <div><strong>Reste libre (<span class="lbl-mois">mois</span>) :</strong> <span id="cagResteLibre" style="font-weight:900;">0,00 €</span></div>
+        <div><strong>Depose (<span class="lbl-mois">mois</span>) :</strong> <span id="cagDeposeMois">0,00 €</span></div>
+        <div><strong>Total cumule (actives) :</strong> <span id="cagTotalDepose">0,00 €</span></div>
+        <div><strong>Reste a financer (Wish List) :</strong> <span id="cagObjectifRestant">0,00 €</span></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Nom de la cagnotte</label><input type="text" class="input" id="cagNom" placeholder="Ex: Livret A, iPad 9e gen, Casque VR, Switch 2..."></div>
@@ -600,7 +601,7 @@
           </select>
         </div>
         <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="any" min="0"></div>
-        <div class="form-group" style="max-width:135px;"><label>Deja depose (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="any" min="0" value="0"></div>
+        <div class="form-group" style="max-width:165px;"><label>Deja depose anterieur (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="any" min="0" value="0"></div>
         <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterCagnotte()">Creer</button></div>
       </div>
       <div class="table-wrapper">
@@ -609,7 +610,7 @@
             <tr>
               <th>Cagnotte</th>
               <th>Type</th>
-              <th style="text-align:right">Depose</th>
+              <th style="text-align:right">Depose (cumule)</th>
               <th style="text-align:right">Objectif</th>
               <th>Progression</th>
               <th style="text-align:center">Actions</th>
@@ -787,12 +788,28 @@
       return 'Autre';
     }
 
-    // Calculs financiers
-    function getTotalRevenus() { return round2(revenus.reduce((s, r) => s + toNum(r.montant), 0)); }
-    function getTotalDepenses() { return round2(depenses.reduce((s, d) => s + toNum(d.montant), 0)); }
-    function getSoldeReel() { return round2(getTotalRevenus() - getTotalDepenses()); }
-    function getTotalCagnottesActives() {
+    // Calculs mensuels (repartent a 0 chaque mois) & globaux (Wish List + Dettes)
+    function getRevenusMoisList(ym) { return revenus.filter(r => estDansMois(r.date, ym)); }
+    function getDepensesMoisList(ym) { return depenses.filter(d => estDansMois(d.date, ym)); }
+    function getTotalRevenusMois(ym) { return round2(getRevenusMoisList(ym).reduce((s, r) => s + toNum(r.montant), 0)); }
+    function getTotalDepensesMois(ym) { return round2(getDepensesMoisList(ym).reduce((s, d) => s + toNum(d.montant), 0)); }
+    function getSoldeMois(ym) { return round2(getTotalRevenusMois(ym) - getTotalDepensesMois(ym)); }
+
+    function getDepotCagnotteMois(c, ym) {
+      if (!c.depotsParMois || c.depotsParMois[ym] == null) return 0;
+      return round2(toNum(c.depotsParMois[ym]));
+    }
+    function getTotalDepotsCagnottesMois(ym) {
+      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + getDepotCagnotteMois(c, ym), 0));
+    }
+    function getTotalCagnottesCumuleActives() {
       return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + toNum(c.montantDepose), 0));
+    }
+    function getTotalWishListActif() {
+      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + toNum(c.objectif), 0));
+    }
+    function getRestantAFinancerWishList() {
+      return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
     }
     function getLinkedDepenseForFixe(f, ym) {
       const depKey = f.paiements && f.paiements[ym];
@@ -812,15 +829,12 @@
     function getDepensesBucketMois(bucket, ym) {
       return depenses.filter(d => getBucketDepense(d) === bucket && estDansMois(d.date, ym));
     }
-    function getPlafondsRestantsMois(ym) {
-      const depV = getDepensesBucketMois('vivres', ym).reduce((s, d) => s + toNum(d.montant), 0);
-      const depS = getDepensesBucketMois('sorties', ym).reduce((s, d) => s + toNum(d.montant), 0);
-      const restV = Math.max(0, toNum(plafonds.vivres) - depV);
-      const restS = Math.max(0, toNum(plafonds.sorties) - depS);
-      return round2(restV + restS);
+    function getResteLibreMois(ym) {
+      return round2(getSoldeMois(ym) - getFixesRestantsMois(ym) - getTotalDepotsCagnottesMois(ym));
     }
-    function getResteLibre() {
-      return round2(getSoldeReel() - getTotalCagnottesActives() - getFixesRestantsMois(selectedMonth));
+    function getResteLibreSiToutWishAchete(ym) {
+      // Uniquement ce qu'il reste a financer sur la Wish List (sans double comptage des depots deja faits)
+      return round2(getResteLibreMois(ym) - getRestantAFinancerWishList());
     }
 
     // Auth
@@ -915,35 +929,49 @@
       const labelMois = formatMoisLabel(selectedMonth);
       document.querySelectorAll('.lbl-mois').forEach(el => el.textContent = labelMois);
 
-      const totRev = getTotalRevenus();
-      const totDep = getTotalDepenses();
-      const solde = getSoldeReel();
-      const totCag = getTotalCagnottesActives();
+      const revListMois = getRevenusMoisList(selectedMonth);
+      const revMois = getTotalRevenusMois(selectedMonth);
+      const depMois = getTotalDepensesMois(selectedMonth);
+      const soldeMois = getSoldeMois(selectedMonth);
       const fixesRest = getFixesRestantsMois(selectedMonth);
-      const plafRest = getPlafondsRestantsMois(selectedMonth);
-      const libre = getResteLibre();
+      const depCagMois = getTotalDepotsCagnottesMois(selectedMonth);
+      const libreMois = getResteLibreMois(selectedMonth);
 
-      const revMois = round2(revenus.filter(r => estDansMois(r.date, selectedMonth)).reduce((s, r) => s + toNum(r.montant), 0));
-      const depMois = round2(depenses.filter(d => estDansMois(d.date, selectedMonth)).reduce((s, d) => s + toNum(d.montant), 0));
+      const totWish = getTotalWishListActif();
+      const resteSiWish = getResteLibreSiToutWishAchete(selectedMonth);
+
+      const depFixesPayees = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0));
+      const depPlafondsMois = round2(
+        getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0) +
+        getDepensesBucketMois('sorties', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0)
+      );
 
       const totPret = prets.reduce((s, p) => s + toNum(p.montantTotal), 0);
       const totRemb = prets.reduce((s, p) => s + toNum(p.montantRembourse), 0);
 
       const soldeEl = document.getElementById('cardSolde');
-      soldeEl.textContent = formatMontant(solde);
-      soldeEl.classList.toggle('card__amount--negative', solde < 0);
+      soldeEl.textContent = formatMontant(soldeMois);
+      soldeEl.classList.toggle('card__amount--negative', soldeMois < 0);
 
       const libreEl = document.getElementById('cardLibre');
-      libreEl.textContent = formatMontant(libre);
-      libreEl.classList.toggle('card__amount--negative', libre < 0);
+      libreEl.textContent = formatMontant(libreMois);
+      libreEl.classList.toggle('card__amount--negative', libreMois < 0);
       document.getElementById('cardLibreSub').textContent =
-        'Fixes a payer : ' + formatMontant(fixesRest) + ' | Plafonds rest. : ' + formatMontant(plafRest);
+        'Fixes : ' + formatMontant(fixesRest) + ' | Cagnottes (mois) : ' + formatMontant(depCagMois);
 
-      document.getElementById('cardCagnottes').textContent = formatMontant(totCag);
+      document.getElementById('cardWishList').textContent = formatMontant(totWish);
+      const wishResteEl = document.getElementById('cardWishResteLibre');
+      wishResteEl.textContent = formatMontant(resteSiWish);
+      wishResteEl.style.color = resteSiWish < 0 ? 'var(--color-dette)' : 'var(--color-revenu)';
+
       document.getElementById('cardRevenusMois').textContent = formatMontant(revMois);
-      document.getElementById('cardRevenusGlobal').textContent = 'Total global : ' + formatMontant(totRev);
+      document.getElementById('cardRevenusSub').textContent =
+        revListMois.length + (revListMois.length > 1 ? ' entrees ce mois' : ' entree ce mois');
+
       document.getElementById('cardDepensesMois').textContent = formatMontant(depMois);
-      document.getElementById('cardDepensesGlobal').textContent = 'Total global : ' + formatMontant(totDep);
+      document.getElementById('cardDepensesSub').textContent =
+        'Fixes : ' + formatMontant(depFixesPayees) + ' | Plafonds : ' + formatMontant(depPlafondsMois);
+
       document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totPret - totRemb));
     }
 
@@ -1140,14 +1168,15 @@
 
     // 4. Rendu Cagnottes
     function renderCagnottes() {
-      const libre = getResteLibre();
-      const actives = cagnottes.filter(c => !c.achete);
-      const totDepose = getTotalCagnottesActives();
-      const restantWish = round2(actives.filter(c => c.type === 'wishlist' && toNum(c.objectif) > 0).reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
+      const libre = getResteLibreMois(selectedMonth);
+      const depMois = getTotalDepotsCagnottesMois(selectedMonth);
+      const totDepose = getTotalCagnottesCumuleActives();
+      const restantWish = getRestantAFinancerWishList();
 
       const libreEl = document.getElementById('cagResteLibre');
       libreEl.textContent = formatMontant(libre);
       libreEl.style.color = libre < 0 ? 'var(--color-dette)' : 'var(--color-revenu)';
+      document.getElementById('cagDeposeMois').textContent = formatMontant(depMois);
       document.getElementById('cagTotalDepose').textContent = formatMontant(totDepose);
       document.getElementById('cagObjectifRestant').textContent = formatMontant(restantWish);
 
@@ -1165,6 +1194,7 @@
 
       tbody.innerHTML = sorted.map(c => {
         const dep = round2(c.montantDepose);
+        const depCeMois = getDepotCagnotteMois(c, selectedMonth);
         const obj = round2(c.objectif);
         const pct = obj > 0 ? Math.min(100, Math.round((dep / obj) * 100)) : 100;
         const atteint = obj > 0 && dep >= obj;
@@ -1182,7 +1212,10 @@
           <tr class="${c.achete ? 'row-done' : ''}">
             <td><strong>${escapeHTML(c.nom)}</strong></td>
             <td><span class="badge ${c.type === 'epargne' ? 'badge--cagnotte' : 'badge--info'}">${c.type === 'epargne' ? 'Economies' : 'Wish List'}</span></td>
-            <td class="amount-cell">${formatMontant(dep)}</td>
+            <td class="amount-cell">
+              ${formatMontant(dep)}
+              ${depCeMois > 0 && !c.achete ? `<br><small class="muted">+${formatMontant(depCeMois)} (${formatMoisLabel(selectedMonth)})</small>` : ''}
+            </td>
             <td class="amount-cell">${obj > 0 ? formatMontant(obj) : 'Libre'}</td>
             <td class="no-strike">${progHTML}</td>
             <td class="actions-cell">
@@ -1197,7 +1230,7 @@
       }).join('');
     }
 
-    // 5. Rendu Dettes
+    // 5. Rendu Dettes (Global)
     function renderPrets() {
       const tbody = document.getElementById('tablePrets');
       if (prets.length === 0) {
@@ -1243,7 +1276,7 @@
 
     // === ACTIONS ===
 
-    // Revenus (Ajout + Modification complete + Suppression)
+    // Revenus
     window.ajouterRevenu = async () => {
       const desc = document.getElementById('revDesc').value.trim();
       const montant = toNum(document.getElementById('revMontant').value);
@@ -1284,7 +1317,7 @@
       await safeWrite(() => refRevenus.child(key).remove());
     };
 
-    // Depenses Fixes (synchronisees avec l'historique des depenses)
+    // Depenses Fixes
     window.preremplirChargesFixes = async () => {
       const defaults = [
         'Loyer', 'Assurance habitation', 'Assurance trottinette',
@@ -1445,7 +1478,6 @@
       if (!confirm('Supprimer cette depense ?')) return;
       await safeWrite(async () => {
         await refDepenses.child(key).remove();
-        // Si cette depense etait liee a une charge fixe payee, on decoche la charge fixe correspondante
         for (const f of depensesFixes) {
           if (f.paiements) {
             for (const [ym, depKey] of Object.entries(f.paiements)) {
@@ -1534,7 +1566,7 @@
       });
     };
 
-    // Cagnottes
+    // Cagnottes (cumulees + suivi des depots par mois)
     window.ajouterCagnotte = async () => {
       const nom = document.getElementById('cagNom').value.trim();
       const type = document.getElementById('cagType').value;
@@ -1543,7 +1575,15 @@
       if (!nom) return alert('Nom requis.');
       if (type === 'wishlist' && objectif <= 0) return alert('Indiquez un prix objectif > 0 pour une Wish List.');
       await safeWrite(async () => {
-        await refCagnottes.push({ nom, type, objectif: round2(objectif), montantDepose: round2(init), achete: false, dateAchat: '' });
+        await refCagnottes.push({
+          nom,
+          type,
+          objectif: round2(objectif),
+          montantDepose: round2(init),
+          depotsParMois: {},
+          achete: false,
+          dateAchat: ''
+        });
         document.getElementById('cagNom').value = '';
         document.getElementById('cagObjectif').value = '';
         document.getElementById('cagInit').value = '0';
@@ -1553,17 +1593,24 @@
     window.mouvementCagnotte = async (key, signe) => {
       const c = cagnottes.find(item => item._firebaseKey === key);
       if (!c) return;
-      const libre = getResteLibre();
+      const libre = getResteLibreMois(selectedMonth);
+      const depCeMois = getDepotCagnotteMois(c, selectedMonth);
       const msg = signe > 0
-        ? `Deposer dans "${c.nom}" (Reste libre dispo : ${formatMontant(libre)})\nMontant a deposer (€) :`
-        : `Retirer de "${c.nom}" (Actuellement depose : ${formatMontant(c.montantDepose)})\nMontant a retirer (€) :`;
+        ? `Deposer dans "${c.nom}" pour ${formatMoisLabel(selectedMonth)}\n(Reste libre du mois : ${formatMontant(libre)})\nMontant a deposer (€) :`
+        : `Retirer de "${c.nom}"\n(Cumule : ${formatMontant(c.montantDepose)} | Depose en ${formatMoisLabel(selectedMonth)} : ${formatMontant(depCeMois)})\nMontant a retirer (€) :`;
       const s = prompt(msg);
       if (s === null) return;
       const val = toNum(s);
       if (val <= 0) return alert('Montant invalide.');
-      const nouveau = round2(toNum(c.montantDepose) + signe * val);
-      if (nouveau < 0) return alert('Impossible de retirer plus que le montant depose.');
-      await safeWrite(() => refCagnottes.child(key).update({ montantDepose: nouveau }));
+      const nouveauTotal = round2(toNum(c.montantDepose) + signe * val);
+      if (nouveauTotal < 0) return alert('Impossible de retirer plus que le montant depose.');
+      const nouveauMois = signe > 0
+        ? round2(depCeMois + val)
+        : round2(Math.max(0, depCeMois - val));
+      await safeWrite(() => refCagnottes.child(key).update({
+        montantDepose: nouveauTotal,
+        ['depotsParMois/' + selectedMonth]: nouveauMois
+      }));
     };
 
     window.acheterCagnotte = async (key) => {
@@ -1584,6 +1631,7 @@
     window.modifierCagnotte = (key) => {
       const c = cagnottes.find(item => item._firebaseKey === key);
       if (!c) return;
+      const depMois = getDepotCagnotteMois(c, selectedMonth);
       ouvrirModal('Modifier la cagnotte', `
         <div class="form-group"><label>Nom</label><input type="text" class="input" id="editCagNom" value="${escapeAttr(c.nom)}" /></div>
         <div class="form-group">
@@ -1594,14 +1642,23 @@
           </select>
         </div>
         <div class="form-group"><label>Objectif (€, 0 = libre)</label><input type="number" class="input" id="editCagObj" step="any" min="0" value="${toNum(c.objectif)}" /></div>
-        <div class="form-group"><label>Montant depose (€)</label><input type="number" class="input" id="editCagDep" step="any" min="0" value="${toNum(c.montantDepose)}" /></div>
+        <div class="form-group"><label>Total depose cumule (€)</label><input type="number" class="input" id="editCagDep" step="any" min="0" value="${toNum(c.montantDepose)}" /></div>
+        <div class="form-group"><label>Dont depose en ${formatMoisLabel(selectedMonth)} (€)</label><input type="number" class="input" id="editCagDepMois" step="any" min="0" value="${depMois}" /></div>
       `, async () => {
         const nom = document.getElementById('editCagNom').value.trim();
         const type = document.getElementById('editCagType').value;
         const objectif = toNum(document.getElementById('editCagObj').value);
         const montantDepose = toNum(document.getElementById('editCagDep').value);
-        if (!nom || objectif < 0 || montantDepose < 0) { alert('Valeurs invalides.'); return false; }
-        await safeWrite(() => refCagnottes.child(key).update({ nom, type, objectif: round2(objectif), montantDepose: round2(montantDepose) }));
+        const depotMois = toNum(document.getElementById('editCagDepMois').value);
+        if (!nom || objectif < 0 || montantDepose < 0 || depotMois < 0) { alert('Valeurs invalides.'); return false; }
+        if (depotMois > montantDepose) { alert('Le depot du mois ne peut pas depasser le total cumule.'); return false; }
+        await safeWrite(() => refCagnottes.child(key).update({
+          nom,
+          type,
+          objectif: round2(objectif),
+          montantDepose: round2(montantDepose),
+          ['depotsParMois/' + selectedMonth]: round2(depotMois)
+        }));
       });
     };
 
@@ -1610,7 +1667,7 @@
       await safeWrite(() => refCagnottes.child(key).remove());
     };
 
-    // Dettes
+    // Dettes (Global)
     window.ajouterPret = async () => {
       const motif = document.getElementById('pretMotif').value.trim();
       const total = toNum(document.getElementById('pretMontant').value);
@@ -1721,14 +1778,20 @@
     window.exportToExcel = () => {
       if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
       const wb = XLSX.utils.book_new();
+      const totPret = prets.reduce((s, p) => s + toNum(p.montantTotal), 0);
+      const totRemb = prets.reduce((s, p) => s + toNum(p.montantRembourse), 0);
       const resume = [
         ['Espace Budget Personnel', formatMoisLabel(selectedMonth)],
-        ['Solde reel', getSoldeReel()],
-        ['Reste libre', getResteLibre()],
-        ['Total cagnottes actives', getTotalCagnottesActives()],
+        ['Solde du mois', getSoldeMois(selectedMonth)],
+        ['Reste libre du mois', getResteLibreMois(selectedMonth)],
+        ['Revenus du mois', getTotalRevenusMois(selectedMonth)],
+        ['Depenses du mois', getTotalDepensesMois(selectedMonth)],
         ['Fixes restants du mois', getFixesRestantsMois(selectedMonth)],
-        ['Revenus totaux', getTotalRevenus()],
-        ['Depenses totales', getTotalDepenses()]
+        ['Depots cagnottes du mois', getTotalDepotsCagnottesMois(selectedMonth)],
+        ['Total Wish List (global)', getTotalWishListActif()],
+        ['Reste a financer Wish List (global)', getRestantAFinancerWishList()],
+        ['Reste libre si tout Wish List achete', getResteLibreSiToutWishAchete(selectedMonth)],
+        ['Dette restante (globale)', Math.max(0, round2(totPret - totRemb))]
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Resume');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(revenus)), 'Revenus');
@@ -1738,7 +1801,7 @@
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(inventaire)), 'Inventaire');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(courses)), 'Courses');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(prets)), 'Dettes');
-      XLSX.writeFile(wb, 'Espace_Budget_' + dateAujourdhui() + '.xlsx');
+      XLSX.writeFile(wb, 'Espace_Budget_' + selectedMonth + '.xlsx');
     };
 
     // Init & raccourcis
