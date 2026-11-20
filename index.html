@@ -29,11 +29,13 @@
       --color-depense: #fbc02d;
       --color-dette: #c62828;
       --color-libre: #1976d2;
+      --color-cagnotte: #8e24aa;
       --card-solde-bg: #1c1c1c;
       --card-revenu-bg: #162616;
       --card-depense-bg: #262216;
       --card-dette-bg: #261616;
       --card-libre-bg: #141e2b;
+      --card-cagnotte-bg: #221626;
     }
     [data-theme="light"] {
       --bg: #f5f5f0;
@@ -51,10 +53,12 @@
       --card-depense-bg: #fff8e1;
       --card-dette-bg: #ffebee;
       --card-libre-bg: #e3f2fd;
+      --card-cagnotte-bg: #f3e5f5;
       --color-revenu: #2e7d32;
       --color-depense: #f9a825;
       --color-dette: #c62828;
       --color-libre: #1565c0;
+      --color-cagnotte: #7b1fa2;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     html { font-size:15px; scroll-behavior:smooth; }
@@ -66,20 +70,30 @@
       min-height:100vh;
       transition: background-color 0.25s ease, color 0.25s ease;
     }
-    .app-container { max-width:1150px; margin:0 auto; padding:1.5rem 1rem 3rem; display:none; }
+    .app-container { max-width:1160px; margin:0 auto; padding:1.5rem 1rem 3rem; display:none; }
     .app-container--visible { display:block; }
     .header {
       display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
-      gap:1rem; margin-bottom:2rem; padding:1.25rem 1.5rem;
+      gap:1rem; margin-bottom:1.5rem; padding:1.15rem 1.4rem;
       background:var(--surface); border:var(--border-width) solid var(--border);
       box-shadow:var(--shadow);
     }
-    .header__title { font-family:var(--font-heading); font-size:1.5rem; letter-spacing:-0.5px; text-transform:uppercase; }
-    .header__actions { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
+    .header__left { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .header__title { font-family:var(--font-heading); font-size:1.45rem; letter-spacing:-0.5px; text-transform:uppercase; }
+    .month-box {
+      display:inline-flex; align-items:center; gap:0.5rem;
+      font-family:var(--font-mono); font-size:0.75rem; text-transform:uppercase;
+      padding:0.25rem 0.6rem; border:2px solid var(--border); background:var(--bg);
+    }
+    .month-box input {
+      background:transparent; border:none; color:var(--text);
+      font-family:var(--font-mono); font-size:0.85rem; font-weight:700; outline:none; cursor:pointer;
+    }
+    .header__actions { display:flex; gap:0.55rem; flex-wrap:wrap; align-items:center; }
     .btn {
-      display:inline-flex; align-items:center; gap:0.4rem;
-      font-family:var(--font-heading); font-size:0.78rem; text-transform:uppercase;
-      letter-spacing:0.5px; padding:0.55rem 1rem; cursor:pointer;
+      display:inline-flex; align-items:center; gap:0.35rem;
+      font-family:var(--font-heading); font-size:0.75rem; text-transform:uppercase;
+      letter-spacing:0.5px; padding:0.52rem 0.95rem; cursor:pointer;
       background:var(--surface); color:var(--text);
       border:var(--border-width) solid var(--border);
       box-shadow:var(--shadow-sm); transition:all var(--transition);
@@ -87,7 +101,7 @@
     }
     .btn:hover { background:var(--text); color:var(--bg); border-color:var(--text); }
     .btn:active { box-shadow:1px 1px 0px var(--border); top:2px; left:2px; }
-    .btn--sm { font-size:0.65rem; padding:0.32rem 0.65rem; box-shadow:2px 2px 0px var(--border); border-width:2px; }
+    .btn--sm { font-size:0.64rem; padding:0.3rem 0.62rem; box-shadow:2px 2px 0px var(--border); border-width:2px; }
     .btn--danger { border-color:var(--text); }
     .btn--danger:hover { background:#ff3333; color:#fff; border-color:#ff3333; }
     .btn--ok { border-color:var(--color-revenu); color:var(--color-revenu); }
@@ -95,34 +109,37 @@
     .btn--primary { background:var(--text); color:var(--bg); font-weight:900; }
     .btn--primary:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
     .theme-toggle {
-      display:flex; align-items:center; gap:0.5rem; cursor:pointer;
+      display:flex; align-items:center; gap:0.45rem; cursor:pointer;
       font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase;
-      letter-spacing:1px; user-select:none; padding:0.4rem 0.8rem;
+      letter-spacing:1px; user-select:none; padding:0.42rem 0.75rem;
       border:2px solid var(--border); background:var(--surface); color:var(--text);
       transition:all var(--transition);
     }
     .theme-toggle:hover { background:var(--text); color:var(--bg); }
     .dashboard {
-      display:grid; grid-template-columns:repeat(auto-fit, minmax(195px,1fr));
-      gap:1rem; margin-bottom:2rem;
+      display:grid; grid-template-columns:repeat(3, 1fr);
+      gap:1rem; margin-bottom:1.8rem;
     }
+    @media (max-width: 820px) { .dashboard { grid-template-columns:repeat(2, 1fr); } }
+    @media (max-width: 520px) { .dashboard { grid-template-columns:1fr; } }
     .card {
       background:var(--card-bg); border:var(--border-width) solid var(--border);
-      padding:1.1rem 1rem; box-shadow:var(--shadow); border-left-width:8px;
+      padding:1rem 1rem; box-shadow:var(--shadow); border-left-width:8px;
     }
     .card--solde { background:var(--card-solde-bg); border-left-color:var(--border); }
     .card--libre { background:var(--card-libre-bg); border-left-color:var(--color-libre); }
+    .card--cagnotte { background:var(--card-cagnotte-bg); border-left-color:var(--color-cagnotte); }
     .card--revenu { background:var(--card-revenu-bg); border-left-color:var(--color-revenu); }
     .card--depense { background:var(--card-depense-bg); border-left-color:var(--color-depense); }
     .card--dette { background:var(--card-dette-bg); border-left-color:var(--color-dette); }
-    .card__label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:1.8px; color:var(--text-secondary); margin-bottom:0.35rem; }
+    .card__label { font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:1.6px; color:var(--text-secondary); margin-bottom:0.3rem; }
     .card__amount { font-family:var(--font-mono); font-size:1.55rem; font-weight:700; letter-spacing:-0.8px; }
     .card__sub { font-family:var(--font-mono); font-size:0.65rem; color:var(--text-secondary); margin-top:0.2rem; }
     .card__amount--negative { color:var(--color-dette); }
     .tabs { display:flex; gap:0; margin-bottom:0; flex-wrap:wrap; }
     .tab-btn {
       font-family:var(--font-heading); font-size:0.78rem; text-transform:uppercase;
-      letter-spacing:0.5px; padding:0.65rem 1.15rem; cursor:pointer;
+      letter-spacing:0.5px; padding:0.68rem 1.2rem; cursor:pointer;
       background:var(--surface); color:var(--text);
       border:var(--border-width) solid var(--border); border-bottom:none;
       margin-right:-3px; transition:all var(--transition); position:relative; z-index:1;
@@ -135,26 +152,30 @@
     .tab-panel {
       display:none; background:var(--card-bg);
       border:var(--border-width) solid var(--border);
-      padding:1.5rem; box-shadow:var(--shadow);
-      animation:fadeIn 0.2s ease;
+      padding:1.4rem; box-shadow:var(--shadow);
+      animation:fadeIn 0.18s ease;
     }
     .tab-panel--active { display:block; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+    .section-box {
+      background:var(--surface); border:2px solid var(--border);
+      padding:1rem; margin-bottom:1.25rem;
+    }
     .section-title {
-      font-family:var(--font-heading); font-size:1rem; text-transform:uppercase;
-      margin-bottom:0.9rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;
+      font-family:var(--font-heading); font-size:0.95rem; text-transform:uppercase;
+      margin-bottom:0.85rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;
     }
     .summary-strip {
       display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center;
-      padding:0.85rem 1rem; margin-bottom:1.25rem;
+      padding:0.8rem 1rem; margin-bottom:1.2rem;
       background:var(--surface); border:2px solid var(--border);
       font-family:var(--font-mono); font-size:0.8rem;
     }
-    .form-row { display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.2rem; align-items:flex-end; }
-    .form-group { display:flex; flex-direction:column; gap:0.3rem; flex:1; min-width:110px; }
-    .form-group label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-secondary); font-weight:700; }
+    .form-row { display:flex; flex-wrap:wrap; gap:0.55rem; margin-bottom:1rem; align-items:flex-end; }
+    .form-group { display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:105px; }
+    .form-group label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:1.3px; color:var(--text-secondary); font-weight:700; }
     .input, .select {
-      font-family:var(--font-mono); font-size:0.85rem; padding:0.55rem 0.7rem;
+      font-family:var(--font-mono); font-size:0.84rem; padding:0.5rem 0.65rem;
       background:var(--bg); color:var(--text);
       border:var(--border-width) solid var(--border);
       box-shadow:2px 2px 0px var(--border); transition:all var(--transition);
@@ -163,28 +184,29 @@
     .filter-bar { display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
     .filter-bar select { flex:1; min-width:150px; }
     .table-wrapper { overflow-x:auto; border:2px solid var(--border); margin-bottom:1rem; }
-    table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:0.78rem; min-width:580px; }
+    table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:0.78rem; min-width:540px; }
     thead th {
-      background:var(--text); color:var(--bg); padding:0.6rem 0.7rem;
-      font-family:var(--font-heading); font-size:0.65rem; text-transform:uppercase;
+      background:var(--text); color:var(--bg); padding:0.55rem 0.65rem;
+      font-family:var(--font-heading); font-size:0.64rem; text-transform:uppercase;
       letter-spacing:1px; border:2px solid var(--border); white-space:nowrap; text-align:left;
     }
-    tbody td { padding:0.55rem 0.7rem; border:2px solid var(--border-light); vertical-align:middle; }
+    tbody td { padding:0.52rem 0.65rem; border:2px solid var(--border-light); vertical-align:middle; }
     tbody tr:hover { background:var(--bg); }
-    .row-done { opacity:0.55; }
+    .row-done { opacity:0.58; }
     .row-done td { text-decoration:line-through; }
     .row-done .actions-cell, .row-done .no-strike { text-decoration:none; }
     .amount-cell { text-align:right; font-weight:700; white-space:nowrap; }
-    .actions-cell { text-align:center; white-space:nowrap; display:flex; gap:0.35rem; justify-content:center; align-items:center; }
-    .progress-bar-wrap { display:flex; align-items:center; gap:0.4rem; min-width:110px; }
-    .progress-bar { flex:1; height:12px; border:2px solid var(--border); background:var(--bg); }
+    .actions-cell { text-align:center; white-space:nowrap; display:flex; gap:0.32rem; justify-content:center; align-items:center; }
+    .progress-bar-wrap { display:flex; align-items:center; gap:0.5rem; min-width:110px; }
+    .progress-bar { flex:1; height:14px; border:2px solid var(--border); background:var(--bg); }
     .progress-bar__fill { height:100%; background:var(--color-dette); transition:width 0.3s ease; }
     .progress-bar__fill--ok { background:var(--color-revenu); }
     .progress-bar__fill--warn { background:var(--color-depense); }
-    .progress-text { font-family:var(--font-mono); font-size:0.65rem; }
+    .progress-bar__fill--info { background:var(--color-cagnotte); }
+    .progress-text { font-family:var(--font-mono); font-size:0.7rem; font-weight:700; white-space:nowrap; }
     .badge {
       display:inline-block; font-family:var(--font-mono); font-size:0.62rem;
-      padding:0.2rem 0.5rem; border:2px solid var(--border);
+      padding:0.18rem 0.48rem; border:2px solid var(--border);
       text-transform:uppercase; letter-spacing:0.8px; white-space:nowrap; font-weight:700;
     }
     .badge--click { cursor:pointer; user-select:none; }
@@ -193,10 +215,14 @@
     .badge--warn { border-color:var(--color-depense); color:var(--color-depense); }
     .badge--danger { border-color:var(--color-dette); color:var(--color-dette); }
     .badge--info { border-color:var(--color-libre); color:var(--color-libre); }
+    .badge--cagnotte { border-color:var(--color-cagnotte); color:var(--color-cagnotte); }
     .check-box { width:18px; height:18px; cursor:pointer; accent-color:var(--color-revenu); vertical-align:middle; }
-    .split-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
-    @media (max-width: 900px) { .split-grid { grid-template-columns:1fr; } }
-    .empty-state { display:block; text-align:center; padding:2rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.85rem; }
+    .split-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+    @media (max-width: 920px) { .split-grid { grid-template-columns:1fr; } }
+    .divider { border:none; border-top:3px dashed var(--border-light); margin:1.5rem 0; }
+    details.archive-box { margin-top:1.2rem; border:2px solid var(--border-light); padding:0.75rem; background:var(--surface); }
+    details.archive-box summary { cursor:pointer; font-family:var(--font-mono); font-size:0.76rem; text-transform:uppercase; font-weight:700; }
+    .empty-state { display:block; text-align:center; padding:1.6rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.82rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
     .login-screen {
@@ -213,12 +239,12 @@
     .login-box .form-group { margin-bottom:1rem; }
     .login-box .btn { width:100%; justify-content:center; }
     .login-error { color:#ff4444; font-family:var(--font-mono); font-size:0.75rem; margin-top:0.75rem; display:none; }
-    .auth-status { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); }
+    .muted { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); }
   </style>
 </head>
 <body data-theme="dark">
 
-  <!-- Ecran de connexion opaque (masque toute l'app tant que non authentifie) -->
+  <!-- Ecran de connexion opaque -->
   <div class="login-screen" id="loginScreen">
     <div class="login-box">
       <h2>Acces Prive</h2>
@@ -238,9 +264,14 @@
 
   <div class="app-container" id="appContent">
     <header class="header">
-      <div><h1 class="header__title">Mon Espace Budget</h1></div>
+      <div class="header__left">
+        <h1 class="header__title">Mon Espace Budget</h1>
+        <label class="month-box">
+          <span>Mois :</span>
+          <input type="month" id="monthPicker" onchange="changerMois(this.value)" />
+        </label>
+      </div>
       <div class="header__actions">
-        <span class="auth-status" id="authStatus">Connecte</span>
         <button class="btn btn--primary" onclick="exportToExcel()">Export Excel</button>
         <button class="btn" onclick="exportToJSON()">Export JSON</button>
         <button class="btn" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
@@ -252,167 +283,199 @@
       </div>
     </header>
 
-    <section class="dashboard" id="dashboard">
+    <!-- DASHBOARD 6 CARTES -->
+    <section class="dashboard">
       <div class="card card--solde">
-        <p class="card__label">Solde actuel</p>
+        <p class="card__label">Solde reel</p>
         <p class="card__amount" id="cardSolde">0,00 €</p>
-        <p class="card__sub">Revenus - Depenses</p>
+        <p class="card__sub">Compte + Epargne (global)</p>
       </div>
       <div class="card card--libre">
         <p class="card__label">Reste libre</p>
         <p class="card__amount" id="cardLibre">0,00 €</p>
-        <p class="card__sub" id="cardEnveloppesInfo">0,00 € en enveloppes</p>
+        <p class="card__sub" id="cardLibreSub">Fixes a payer : 0,00 €</p>
+      </div>
+      <div class="card card--cagnotte">
+        <p class="card__label">Total Cagnottes</p>
+        <p class="card__amount" id="cardCagnottes">0,00 €</p>
+        <p class="card__sub">Wish list + Livret A</p>
       </div>
       <div class="card card--revenu">
-        <p class="card__label">Revenus totaux</p>
-        <p class="card__amount" id="cardRevenus">0,00 €</p>
+        <p class="card__label">Revenus (<span class="lbl-mois">mois</span>)</p>
+        <p class="card__amount" id="cardRevenusMois">0,00 €</p>
+        <p class="card__sub" id="cardRevenusGlobal">Total global : 0,00 €</p>
       </div>
       <div class="card card--depense">
-        <p class="card__label">Depenses totales</p>
-        <p class="card__amount" id="cardDepenses">0,00 €</p>
+        <p class="card__label">Depenses (<span class="lbl-mois">mois</span>)</p>
+        <p class="card__amount" id="cardDepensesMois">0,00 €</p>
+        <p class="card__sub" id="cardDepensesGlobal">Total global : 0,00 €</p>
       </div>
       <div class="card card--dette">
         <p class="card__label">Dette restante</p>
         <p class="card__amount" id="cardDettes">0,00 €</p>
+        <p class="card__sub">Suivi Garant</p>
       </div>
     </section>
 
+    <!-- 5 ONGLETS SUR MESURE -->
     <div class="tabs">
-      <button class="tab-btn tab-btn--active" onclick="switchTab('revenus')" id="tabBtnRevenus">Revenus</button>
-      <button class="tab-btn" onclick="switchTab('depenses')" id="tabBtnDepenses">Depenses</button>
-      <button class="tab-btn" onclick="switchTab('enveloppes')" id="tabBtnEnveloppes">Enveloppes</button>
-      <button class="tab-btn" onclick="switchTab('wishlist')" id="tabBtnWishlist">Wish List</button>
-      <button class="tab-btn" onclick="switchTab('inventaire')" id="tabBtnInventaire">Inventaire & Courses</button>
-      <button class="tab-btn" onclick="switchTab('dettes')" id="tabBtnDettes">Dette Garant</button>
+      <button class="tab-btn tab-btn--active" onclick="switchTab('revenus')" id="tabBtnRevenus">1. Revenus</button>
+      <button class="tab-btn" onclick="switchTab('fixes')" id="tabBtnFixes">2. Depenses fixes</button>
+      <button class="tab-btn" onclick="switchTab('plafonds')" id="tabBtnPlafonds">3. Depenses a plafond</button>
+      <button class="tab-btn" onclick="switchTab('cagnottes')" id="tabBtnCagnottes">4. Cagnottes</button>
+      <button class="tab-btn" onclick="switchTab('dettes')" id="tabBtnDettes">5. Dettes</button>
     </div>
 
-    <!-- ONGLET REVENUS -->
+    <!-- ONGLET 1 : REVENUS -->
     <section class="tab-panel tab-panel--active" id="panelRevenus">
       <div class="form-row">
-        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Salaire alternance, CAF..."></div>
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Alternance novembre, APL, Anniversaire..."></div>
         <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group"><label>Categorie</label><input type="text" class="input" id="revCategorie" placeholder="Ex: Salaire, CAF..."></div>
+        <div class="form-group" style="max-width:210px;">
+          <label>Categorie</label>
+          <select class="select" id="revCategorie">
+            <option value="Salaires">Salaires (Alternance / Job)</option>
+            <option value="Aides">Aides (APL, Mobili-jeunes...)</option>
+            <option value="Cadeaux">Cadeaux</option>
+          </select>
+        </div>
         <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
         <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterRevenu()">Ajouter</button></div>
       </div>
       <div class="filter-bar">
-        <select id="filtreRevenuCat" class="select" onchange="filtrerTable('revenus')"><option value="">Toutes les categories</option></select>
-        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreRevenuCat').value=''; filtrerTable('revenus');">Reinitialiser</button>
+        <select id="filtreRevenuPeriode" class="select" style="max-width:200px;" onchange="renderRevenus()">
+          <option value="mois">Mois selectionne</option>
+          <option value="tout">Tout l'historique</option>
+        </select>
+        <select id="filtreRevenuCat" class="select" style="max-width:240px;" onchange="renderRevenus()">
+          <option value="">Toutes les categories</option>
+          <option value="Salaires">Salaires</option>
+          <option value="Aides">Aides</option>
+          <option value="Cadeaux">Cadeaux</option>
+        </select>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead><tbody id="tableRevenus"></tbody></table></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead>
+          <tbody id="tableRevenus"></tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- ONGLET DEPENSES -->
-    <section class="tab-panel" id="panelDepenses">
-      <div class="form-row">
-        <div class="form-group"><label>Description</label><input type="text" class="input" id="depDesc" placeholder="Ex: Loyer, Courses..."></div>
-        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="depMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group"><label>Categorie</label><input type="text" class="input" id="depCategorie" placeholder="Ex: Alimentation, Logement..."></div>
-        <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="depDate"></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterDepense()">Ajouter</button></div>
-      </div>
-      <div class="filter-bar">
-        <select id="filtreDepenseCat" class="select" onchange="filtrerTable('depenses')"><option value="">Toutes les categories</option></select>
-        <button class="btn btn--sm btn--danger" onclick="document.getElementById('filtreDepenseCat').value=''; filtrerTable('depenses');">Reinitialiser</button>
-      </div>
-      <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead><tbody id="tableDepenses"></tbody></table></div>
-    </section>
-
-    <!-- ONGLET ENVELOPPES -->
-    <section class="tab-panel" id="panelEnveloppes">
+    <!-- ONGLET 2 : DEPENSES FIXES -->
+    <section class="tab-panel" id="panelFixes">
       <div class="summary-strip">
-        <div><strong>Solde actuel :</strong> <span id="envSoldeActuel">0,00 €</span></div>
-        <div><strong>Reserve en enveloppes :</strong> <span id="envTotalReserve">0,00 €</span></div>
-        <div><strong>Reste libre :</strong> <span id="envResteLibre">0,00 €</span></div>
-        <button class="btn btn--sm" onclick="nouveauMoisEnveloppes()">Nouveau mois (RAZ)</button>
+        <div><strong>Total mensuel fixe :</strong> <span id="fixeTotalMois">0,00 €</span></div>
+        <div><strong>Paye (<span class="lbl-mois">mois</span>) :</strong> <span id="fixePayeMois" style="color:var(--color-revenu)">0,00 €</span></div>
+        <div><strong>Reste a payer :</strong> <span id="fixeRestantMois" style="color:var(--color-depense)">0,00 €</span></div>
+        <button class="btn btn--sm" id="btnPrefillFixes" style="display:none;" onclick="preremplirChargesFixes()">Pre-remplir mes 7 charges</button>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Nom de l'enveloppe</label><input type="text" class="input" id="envNom" placeholder="Ex: Loyer, Courses, Cagnotte VR..."></div>
-        <div class="form-group" style="max-width:180px;">
-          <label>Type</label>
-          <select class="select" id="envType">
-            <option value="fixe">Charge fixe (a cocher)</option>
-            <option value="variable">Budget / Cagnotte</option>
-          </select>
-        </div>
-        <div class="form-group" style="max-width:140px;"><label>Alloue (€)</label><input type="number" class="input" id="envMontant" placeholder="0.00" step="0.01" min="0"></div>
-        <div class="form-group"><label>Cat. depense auto</label><input type="text" class="input" id="envCategorie" placeholder="Ex: Logement, Alimentation..."></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterEnveloppe()">Creer</button></div>
+        <div class="form-group"><label>Charge fixe mensuelle</label><input type="text" class="input" id="fixeNom" placeholder="Ex: Loyer, Assurance trottinette, Electricite..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant / mois (€)</label><input type="number" class="input" id="fixeMontant" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="form-group" style="max-width:140px;"><label>Jour prelevement</label><input type="number" class="input" id="fixeJour" placeholder="Ex: 5" min="1" max="31"></div>
+        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterChargeFixe()">Ajouter</button></div>
       </div>
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>Statut</th>
-              <th>Enveloppe</th>
-              <th>Type</th>
-              <th style="text-align:right">Alloue</th>
-              <th style="text-align:right">Depense</th>
-              <th style="text-align:right">Restant</th>
+              <th>Statut (<span class="lbl-mois">mois</span>)</th>
+              <th>Charge fixe</th>
+              <th>Echeance</th>
+              <th style="text-align:right">Montant mensuel</th>
               <th style="text-align:center">Actions</th>
             </tr>
           </thead>
-          <tbody id="tableEnveloppes"></tbody>
+          <tbody id="tableFixes"></tbody>
         </table>
       </div>
     </section>
 
-    <!-- ONGLET WISH LIST -->
-    <section class="tab-panel" id="panelWishlist">
-      <div class="summary-strip">
-        <div><strong>Reste libre disponible :</strong> <span id="wishResteLibre">0,00 €</span></div>
-        <div><strong>Total Wish List active :</strong> <span id="wishTotalActif">0,00 €</span></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Article / Projet</label><input type="text" class="input" id="wishNom" placeholder="Ex: Casque VR, Switch 2, iPad 9e gen..."></div>
-        <div class="form-group" style="max-width:140px;"><label>Prix estime (€)</label><input type="number" class="input" id="wishPrix" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group" style="max-width:150px;">
-          <label>Priorite</label>
-          <select class="select" id="wishPriorite">
-            <option value="Haute">Haute</option>
-            <option value="Moyenne" selected>Moyenne</option>
-            <option value="Basse">Basse</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Note (optionnel)</label><input type="text" class="input" id="wishNote" placeholder="Ex: Reconditionne, taille 7..."></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterWish()">Ajouter</button></div>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Article</th>
-              <th>Priorite</th>
-              <th style="text-align:right">Prix</th>
-              <th>Budget</th>
-              <th style="text-align:center">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tableWishlist"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ONGLET INVENTAIRE & COURSES -->
-    <section class="tab-panel" id="panelInventaire">
+    <!-- ONGLET 3 : DEPENSES A PLAFOND (+ INVENTAIRE & COURSES) -->
+    <section class="tab-panel" id="panelPlafonds">
       <div class="split-grid">
-        <!-- COLONNE INVENTAIRE -->
-        <div>
+        <!-- PLAFOND 1 : VIVRES, HYGIENE & MENAGE -->
+        <div class="section-box">
           <div class="section-title">
-            <span>Mon Inventaire</span>
-            <span class="auth-status">Clic sur statut = changer</span>
+            <span>1. Vivres, Hygiene & Menage</span>
+            <button class="btn btn--sm" onclick="modifierPlafond('vivres')">✎ Plafond</button>
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;">
+              <span>Depense : <strong id="vivresDepense">0,00 €</strong> / <strong id="vivresPlafond">200,00 €</strong></span>
+              <span id="vivresResteBadge" class="badge badge--ok">Reste 200,00 €</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar"><div class="progress-bar__fill progress-bar__fill--ok" id="vivresBar" style="width:0%;"></div></div>
+              <span class="progress-text" id="vivresPct">0%</span>
+            </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Produit</label><input type="text" class="input" id="invNom" placeholder="Ex: Riz, Oeufs, Lessive..."></div>
+            <div class="form-group"><label>Course / Achat</label><input type="text" class="input" id="vivresDesc" placeholder="Ex: Lidl, Lessive..."></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="vivresMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+            <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="vivresDate"></div>
+            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('vivres')">+</button></div>
+          </div>
+          <div class="table-wrapper" style="margin-bottom:0;">
+            <table style="min-width:340px;">
+              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">×</th></tr></thead>
+              <tbody id="tableVivres"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PLAFOND 2 : SORTIES & IMPREVUS -->
+        <div class="section-box">
+          <div class="section-title">
+            <span>2. Sorties & Imprevus</span>
+            <button class="btn btn--sm" onclick="modifierPlafond('sorties')">✎ Plafond</button>
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;">
+              <span>Depense : <strong id="sortiesDepense">0,00 €</strong> / <strong id="sortiesPlafond">80,00 €</strong></span>
+              <span id="sortiesResteBadge" class="badge badge--ok">Reste 80,00 €</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar"><div class="progress-bar__fill progress-bar__fill--ok" id="sortiesBar" style="width:0%;"></div></div>
+              <span class="progress-text" id="sortiesPct">0%</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Sortie / Imprevu</label><input type="text" class="input" id="sortiesDesc" placeholder="Ex: Resto amis, Coiffeur..."></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="sortiesMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+            <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="sortiesDate"></div>
+            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('sorties')">+</button></div>
+          </div>
+          <div class="table-wrapper" style="margin-bottom:0;">
+            <table style="min-width:340px;">
+              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">×</th></tr></thead>
+              <tbody id="tableSorties"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- INVENTAIRE & LISTE DE COURSES (INTEGRES AU PLAFOND VIVRES) -->
+      <div class="split-grid">
+        <div>
+          <div class="section-title">
+            <span>Inventaire (Frigo / Placard / Hygiene)</span>
+            <span class="muted">Clic statut = changer</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Produit</label><input type="text" class="input" id="invNom" placeholder="Ex: Riz, Oeufs, Gel douche..."></div>
             <div class="form-group" style="max-width:155px;">
               <label>Zone</label>
               <select class="select" id="invZone">
                 <option value="Frigo">Frigo</option>
                 <option value="Placard">Placard</option>
-                <option value="Hygiene & Maison">Hygiene & Maison</option>
+                <option value="Hygiene & Menage">Hygiene & Menage</option>
               </select>
             </div>
-            <div class="form-group" style="max-width:120px;">
+            <div class="form-group" style="max-width:115px;">
               <label>Etat</label>
               <select class="select" id="invStatut">
                 <option value="ok">En stock</option>
@@ -427,7 +490,7 @@
               <option value="">Toutes les zones</option>
               <option value="Frigo">Frigo</option>
               <option value="Placard">Placard</option>
-              <option value="Hygiene & Maison">Hygiene & Maison</option>
+              <option value="Hygiene & Menage">Hygiene & Menage</option>
             </select>
             <select id="filtreInvStatut" class="select" onchange="renderInventaire()">
               <option value="">Tous les etats</option>
@@ -436,30 +499,22 @@
             </select>
           </div>
           <div class="table-wrapper">
-            <table style="min-width:360px;">
-              <thead>
-                <tr>
-                  <th>Produit</th>
-                  <th>Zone</th>
-                  <th>Etat</th>
-                  <th style="text-align:center">Action</th>
-                </tr>
-              </thead>
+            <table style="min-width:340px;">
+              <thead><tr><th>Produit</th><th>Zone</th><th>Etat</th><th style="text-align:center">Action</th></tr></thead>
               <tbody id="tableInventaire"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- COLONNE COURSES -->
         <div>
           <div class="section-title">
             <span>Liste de Courses</span>
-            <button class="btn btn--sm btn--ok" onclick="validerCoursesCochees()">Valider les achats</button>
+            <button class="btn btn--sm btn--ok" onclick="validerCoursesCochees()">Valider achats → Plafond</button>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>A acheter</label><input type="text" class="input" id="courseNom" placeholder="Ex: Bananes, Lait..."></div>
-            <div class="form-group" style="max-width:85px;"><label>Qte</label><input type="text" class="input" id="courseQte" placeholder="1"></div>
-            <div class="form-group" style="max-width:125px;">
+            <div class="form-group"><label>A acheter</label><input type="text" class="input" id="courseNom" placeholder="Ex: Bananes, Lait, Savon..."></div>
+            <div class="form-group" style="max-width:80px;"><label>Qte</label><input type="text" class="input" id="courseQte" placeholder="1"></div>
+            <div class="form-group" style="max-width:120px;">
               <label>Besoin</label>
               <select class="select" id="courseHorizon">
                 <option value="semaine">Semaine</option>
@@ -476,23 +531,64 @@
             </select>
           </div>
           <div class="table-wrapper">
-            <table style="min-width:360px;">
-              <thead>
-                <tr>
-                  <th style="width:36px;">OK</th>
-                  <th>Article</th>
-                  <th>Besoin</th>
-                  <th style="text-align:center">Action</th>
-                </tr>
-              </thead>
+            <table style="min-width:340px;">
+              <thead><tr><th style="width:36px;">OK</th><th>Article</th><th>Besoin</th><th style="text-align:center">×</th></tr></thead>
               <tbody id="tableCourses"></tbody>
             </table>
           </div>
         </div>
       </div>
+
+      <!-- TIROIR HISTORIQUE GLOBAL / ANCIENNES DEPENSES -->
+      <details class="archive-box">
+        <summary>Voir tout l'historique des depenses enregistrees (<span id="countAllDep">0</span>)</summary>
+        <div class="table-wrapper" style="margin-top:0.8rem;margin-bottom:0;">
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead>
+            <tbody id="tableAllDepenses"></tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
-    <!-- ONGLET DETTES -->
+    <!-- ONGLET 4 : CAGNOTTES (WISH LIST + ECONOMIES / LIVRET A) -->
+    <section class="tab-panel" id="panelCagnottes">
+      <div class="summary-strip">
+        <div><strong>Reste libre a repartir :</strong> <span id="cagResteLibre" style="font-weight:900;">0,00 €</span></div>
+        <div><strong>Total depose (actives) :</strong> <span id="cagTotalDepose">0,00 €</span></div>
+        <div><strong>Objectif restant (Wish List) :</strong> <span id="cagObjectifRestant">0,00 €</span></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nom de la cagnotte</label><input type="text" class="input" id="cagNom" placeholder="Ex: Livret A, iPad 9e gen, Casque VR, Switch 2..."></div>
+        <div class="form-group" style="max-width:185px;">
+          <label>Type</label>
+          <select class="select" id="cagType">
+            <option value="wishlist">Wish List (Achat)</option>
+            <option value="epargne">Economies / Livret A</option>
+          </select>
+        </div>
+        <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="0.01" min="0"></div>
+        <div class="form-group" style="max-width:135px;"><label>Deja depose (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="0.01" min="0" value="0"></div>
+        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterCagnotte()">Creer</button></div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Cagnotte</th>
+              <th>Type</th>
+              <th style="text-align:right">Depose</th>
+              <th style="text-align:right">Objectif</th>
+              <th>Progression</th>
+              <th style="text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableCagnottes"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ONGLET 5 : DETTES (INCHANGE) -->
     <section class="tab-panel" id="panelDettes">
       <div class="form-row">
         <div class="form-group"><label>Motif du pret</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarite..."></div>
@@ -535,72 +631,91 @@
     // Etat
     let revenus = [];
     let depenses = [];
-    let prets = [];
-    let enveloppes = [];
-    let wishlist = [];
+    let depensesFixes = [];
+    let cagnottes = [];
     let inventaire = [];
     let courses = [];
+    let prets = [];
+    let plafonds = { vivres: 200, sorties: 80 };
     let currentTheme = 'dark';
+    let selectedMonth = moisActuel();
     let user = null;
     let listenersStarted = false;
 
-    // References Firebase (compatibles V1 + nouvelles branches V2)
+    // References Firebase (100% compatibles avec tes donnees V1/V2)
     const refRevenus = db.ref('revenus');
     const refDepenses = db.ref('depenses');
-    const refPrets = db.ref('prets');
-    const refEnveloppes = db.ref('enveloppes');
-    const refWishlist = db.ref('wishlist');
+    const refFixes = db.ref('depensesFixes');
+    const refCagnottes = db.ref('cagnottes');
     const refInventaire = db.ref('inventaire');
     const refCourses = db.ref('courses');
+    const refPrets = db.ref('prets');
+    const refPlafonds = db.ref('config/plafonds');
     const refTheme = db.ref('config/theme');
 
     // Utilitaires
     function round2(n) { return Math.round((parseFloat(n) || 0) * 100) / 100; }
     function formatMontant(m) { return round2(m).toFixed(2).replace('.', ',') + ' €'; }
+    function dateAujourdhui() {
+      const now = new Date();
+      return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    }
+    function moisActuel() { return dateAujourdhui().slice(0, 7); }
     function formatDate(d) {
       if (!d) return '—';
       const p = d.split('-');
       return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : d;
     }
-    function dateAujourdhui() {
-      const now = new Date();
-      return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    function formatMoisLabel(ym) {
+      if (!ym) return 'mois';
+      const [y, m] = ym.split('-');
+      const noms = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return (noms[parseInt(m, 10) - 1] || m) + ' ' + y;
     }
+    function estDansMois(dateStr, ym) { return (dateStr || '').startsWith(ym); }
     function escapeHTML(str) {
       const div = document.createElement('div');
       div.textContent = str == null ? '' : String(str);
       return div.innerHTML;
     }
-    function getSoldeActuel() {
-      const rev = revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0);
-      const dep = depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
-      return round2(rev - dep);
-    }
-    function getRestantEnveloppe(e) {
-      const alloue = parseFloat(e.montantAlloue) || 0;
-      if (e.type === 'fixe') return e.payee ? 0 : round2(alloue);
-      return round2(Math.max(0, alloue - (parseFloat(e.montantDepense) || 0)));
-    }
-    function getTotalEnveloppesRestant() {
-      return round2(enveloppes.reduce((s, e) => s + getRestantEnveloppe(e), 0));
-    }
-    function getResteLibre() {
-      return round2(getSoldeActuel() - getTotalEnveloppesRestant());
+
+    // Classification intelligente (compatibilite anciennes depenses V1/V2)
+    function getBucketDepense(d) {
+      if (d.bucket) return d.bucket;
+      const cat = (d.categorie || '').toLowerCase();
+      if (cat.includes('vivre') || cat.includes('alim') || cat.includes('course') || cat.includes('hyg') || cat.includes('menag')) return 'vivres';
+      if (cat.includes('sorti') || cat.includes('imprev') || cat.includes('loisir') || cat.includes('resto') || cat.includes('ami')) return 'sorties';
+      return 'autre';
     }
 
-    // Authentification & masquage complet de l'app
+    // Calculs financiers
+    function getTotalRevenus() { return round2(revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0)); }
+    function getTotalDepenses() { return round2(depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0)); }
+    function getSoldeReel() { return round2(getTotalRevenus() - getTotalDepenses()); }
+    function getTotalCagnottesActives() {
+      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + (parseFloat(c.montantDepose) || 0), 0));
+    }
+    function isFixePaye(f, ym) { return !!(f.paiements && f.paiements[ym]); }
+    function getFixesRestantsMois(ym) {
+      return round2(depensesFixes.filter(f => !isFixePaye(f, ym)).reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
+    }
+    function getResteLibre() {
+      return round2(getSoldeReel() - getTotalCagnottesActives() - getFixesRestantsMois(selectedMonth));
+    }
+    function getDepensesBucketMois(bucket, ym) {
+      return depenses.filter(d => getBucketDepense(d) === bucket && estDansMois(d.date, ym));
+    }
+
+    // Auth
     function stopRealtimeListeners() {
-      [refRevenus, refDepenses, refPrets, refEnveloppes, refWishlist, refInventaire, refCourses, refTheme].forEach(r => r.off());
+      [refRevenus, refDepenses, refFixes, refCagnottes, refInventaire, refCourses, refPrets, refPlafonds, refTheme].forEach(r => r.off());
       listenersStarted = false;
     }
 
     function updateAuthUI() {
       const loginScreen = document.getElementById('loginScreen');
       const appContent = document.getElementById('appContent');
-      const status = document.getElementById('authStatus');
-
       if (user) {
-        status.textContent = 'Connecte';
         loginScreen.classList.add('login-screen--hidden');
         appContent.classList.add('app-container--visible');
         if (!listenersStarted) {
@@ -611,7 +726,7 @@
         stopRealtimeListeners();
         loginScreen.classList.remove('login-screen--hidden');
         appContent.classList.remove('app-container--visible');
-        revenus = []; depenses = []; prets = []; enveloppes = []; wishlist = []; inventaire = []; courses = [];
+        revenus = []; depenses = []; depensesFixes = []; cagnottes = []; inventaire = []; courses = []; prets = [];
         updateAll();
       }
     }
@@ -621,7 +736,6 @@
       const password = document.getElementById('loginPassword').value;
       const errorEl = document.getElementById('loginError');
       errorEl.style.display = 'none';
-
       if (!email || !password) {
         errorEl.textContent = 'Veuillez remplir tous les champs.';
         errorEl.style.display = 'block';
@@ -636,70 +750,58 @@
       }
     };
 
-    window.seDeconnecter = async function() {
-      await auth.signOut();
-    };
+    window.seDeconnecter = async () => { await auth.signOut(); };
+    auth.onAuthStateChanged(u => { user = u; updateAuthUI(); });
 
-    auth.onAuthStateChanged(firebaseUser => {
-      user = firebaseUser;
-      updateAuthUI();
-    });
-
-    // Ecoute temps reel Firebase
-    function mapSnapshot(snap) {
-      const data = snap.val();
-      if (!data) return [];
-      return Object.entries(data).map(([key, value]) => ({ ...value, _firebaseKey: key }));
+    // Listeners temps reel
+    function mapSnap(snap) {
+      const val = snap.val();
+      if (!val) return [];
+      return Object.entries(val).map(([key, item]) => ({ ...item, _firebaseKey: key }));
     }
 
     function startRealtimeListeners() {
-      refRevenus.on('value', s => {
-        revenus = mapSnapshot(s).sort((a,b) => new Date(b.date) - new Date(a.date));
-        updateAll();
-      });
-      refDepenses.on('value', s => {
-        depenses = mapSnapshot(s).sort((a,b) => new Date(b.date) - new Date(a.date));
-        updateAll();
-      });
-      refPrets.on('value', s => {
-        prets = mapSnapshot(s);
-        updateAll();
-      });
-      refEnveloppes.on('value', s => {
-        enveloppes = mapSnapshot(s);
-        updateAll();
-      });
-      refWishlist.on('value', s => {
-        wishlist = mapSnapshot(s);
-        updateAll();
-      });
-      refInventaire.on('value', s => {
-        inventaire = mapSnapshot(s);
-        updateAll();
-      });
-      refCourses.on('value', s => {
-        courses = mapSnapshot(s);
+      refRevenus.on('value', s => { revenus = mapSnap(s).sort((a,b) => (b.date || '').localeCompare(a.date || '')); updateAll(); });
+      refDepenses.on('value', s => { depenses = mapSnap(s).sort((a,b) => (b.date || '').localeCompare(a.date || '')); updateAll(); });
+      refFixes.on('value', s => { depensesFixes = mapSnap(s); updateAll(); });
+      refCagnottes.on('value', s => { cagnottes = mapSnap(s); updateAll(); });
+      refInventaire.on('value', s => { inventaire = mapSnap(s); updateAll(); });
+      refCourses.on('value', s => { courses = mapSnap(s); updateAll(); });
+      refPrets.on('value', s => { prets = mapSnap(s); updateAll(); });
+      refPlafonds.on('value', s => {
+        const v = s.val();
+        if (v) plafonds = { vivres: parseFloat(v.vivres) || 200, sorties: parseFloat(v.sorties) || 80 };
         updateAll();
       });
       refTheme.on('value', s => {
-        const val = s.val();
-        if (val) { currentTheme = val; applyTheme(); }
+        const v = s.val();
+        if (v) { currentTheme = v; applyTheme(); }
       });
     }
 
+    window.changerMois = (ym) => {
+      if (!ym) return;
+      selectedMonth = ym;
+      updateAll();
+    };
+
     // Rendu Dashboard
     function updateDashboard() {
-      const totalRev = revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0);
-      const totalDep = depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
-      const totalPret = prets.reduce((s, p) => s + (parseFloat(p.montantTotal) || 0), 0);
-      const totalRemb = prets.reduce((s, p) => s + (parseFloat(p.montantRembourse) || 0), 0);
-      const solde = round2(totalRev - totalDep);
-      const totalEnv = getTotalEnveloppesRestant();
-      const libre = round2(solde - totalEnv);
+      const labelMois = formatMoisLabel(selectedMonth);
+      document.querySelectorAll('.lbl-mois').forEach(el => el.textContent = labelMois);
 
-      document.getElementById('cardRevenus').textContent = formatMontant(totalRev);
-      document.getElementById('cardDepenses').textContent = formatMontant(totalDep);
-      document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totalPret - totalRemb));
+      const totRev = getTotalRevenus();
+      const totDep = getTotalDepenses();
+      const solde = getSoldeReel();
+      const totCag = getTotalCagnottesActives();
+      const fixesRest = getFixesRestantsMois(selectedMonth);
+      const libre = getResteLibre();
+
+      const revMois = round2(revenus.filter(r => estDansMois(r.date, selectedMonth)).reduce((s, r) => s + (parseFloat(r.montant) || 0), 0));
+      const depMois = round2(depenses.filter(d => estDansMois(d.date, selectedMonth)).reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
+
+      const totPret = prets.reduce((s, p) => s + (parseFloat(p.montantTotal) || 0), 0);
+      const totRemb = prets.reduce((s, p) => s + (parseFloat(p.montantRembourse) || 0), 0);
 
       const soldeEl = document.getElementById('cardSolde');
       soldeEl.textContent = formatMontant(solde);
@@ -708,245 +810,254 @@
       const libreEl = document.getElementById('cardLibre');
       libreEl.textContent = formatMontant(libre);
       libreEl.classList.toggle('card__amount--negative', libre < 0);
-      document.getElementById('cardEnveloppesInfo').textContent = formatMontant(totalEnv) + ' en enveloppes';
+      document.getElementById('cardLibreSub').textContent = 'Fixes a payer (' + labelMois + ') : ' + formatMontant(fixesRest);
+
+      document.getElementById('cardCagnottes').textContent = formatMontant(totCag);
+      document.getElementById('cardRevenusMois').textContent = formatMontant(revMois);
+      document.getElementById('cardRevenusGlobal').textContent = 'Total global : ' + formatMontant(totRev);
+      document.getElementById('cardDepensesMois').textContent = formatMontant(depMois);
+      document.getElementById('cardDepensesGlobal').textContent = 'Total global : ' + formatMontant(totDep);
+      document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totPret - totRemb));
     }
 
-    // Filtres Revenus / Depenses
-    function populateFilterSelect(type) {
-      const selectId = type === 'revenus' ? 'filtreRevenuCat' : 'filtreDepenseCat';
-      const select = document.getElementById(selectId);
-      if (!select) return;
-      const currentVal = select.value;
-      const data = type === 'revenus' ? revenus : depenses;
-      const categories = [...new Set(data.map(item => item.categorie || 'Sans categorie'))].sort();
-      select.innerHTML = '<option value="">Toutes les categories</option>';
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        select.appendChild(option);
-      });
-      select.value = categories.includes(currentVal) ? currentVal : '';
-    }
-
-    window.filtrerTable = function(type) {
-      const selectId = type === 'revenus' ? 'filtreRevenuCat' : 'filtreDepenseCat';
-      const tableId = type === 'revenus' ? 'tableRevenus' : 'tableDepenses';
-      const filtre = document.getElementById(selectId).value.trim().toLowerCase();
-      document.querySelectorAll(`#${tableId} tr:not(.empty-state-row)`).forEach(row => {
-        const catCell = row.cells[2];
-        if (catCell) {
-          const catText = (catCell.textContent || '').toLowerCase();
-          row.style.display = (!filtre || catText === filtre) ? '' : 'none';
-        }
-      });
-    };
-
+    // 1. Rendu Revenus
     function renderRevenus() {
+      const periode = document.getElementById('filtreRevenuPeriode').value;
+      const cat = document.getElementById('filtreRevenuCat').value;
+      let list = [...revenus];
+      if (periode === 'mois') list = list.filter(r => estDansMois(r.date, selectedMonth));
+      if (cat) list = list.filter(r => (r.categorie || '') === cat);
+
       const tbody = document.getElementById('tableRevenus');
-      if (revenus.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">Aucun revenu</span></td></tr>';
-      } else {
-        tbody.innerHTML = revenus.map(r => `
-          <tr>
-            <td>${formatDate(r.date)}</td>
-            <td>${escapeHTML(r.description)}</td>
-            <td><span class="badge">${escapeHTML(r.categorie || 'Sans categorie')}</span></td>
-            <td class="amount-cell">${formatMontant(r.montant)}</td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r._firebaseKey}')">×</button></td>
-          </tr>
-        `).join('');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucun revenu sur cette selection.</span></td></tr>';
+        return;
       }
-      populateFilterSelect('revenus');
-      window.filtrerTable('revenus');
+      tbody.innerHTML = list.map(r => `
+        <tr>
+          <td>${formatDate(r.date)}</td>
+          <td>${escapeHTML(r.description)}</td>
+          <td><span class="badge badge--ok">${escapeHTML(r.categorie || 'Autre')}</span></td>
+          <td class="amount-cell">${formatMontant(r.montant)}</td>
+          <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r._firebaseKey}')">×</button></td>
+        </tr>
+      `).join('');
     }
 
-    function renderDepenses() {
-      const tbody = document.getElementById('tableDepenses');
-      if (depenses.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">Aucune depense</span></td></tr>';
-      } else {
-        tbody.innerHTML = depenses.map(d => `
-          <tr>
-            <td>${formatDate(d.date)}</td>
-            <td>${escapeHTML(d.description)}</td>
-            <td><span class="badge">${escapeHTML(d.categorie || 'Sans categorie')}</span></td>
-            <td class="amount-cell">${formatMontant(d.montant)}</td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
-          </tr>
-        `).join('');
-      }
-      populateFilterSelect('depenses');
-      window.filtrerTable('depenses');
-    }
+    // 2. Rendu Depenses Fixes
+    function renderFixes() {
+      const total = round2(depensesFixes.reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
+      const paye = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
+      const restant = round2(total - paye);
 
-    // Rendu Enveloppes
-    function renderEnveloppes() {
-      const solde = getSoldeActuel();
-      const totalReserve = getTotalEnveloppesRestant();
-      const libre = round2(solde - totalReserve);
-      document.getElementById('envSoldeActuel').textContent = formatMontant(solde);
-      document.getElementById('envTotalReserve').textContent = formatMontant(totalReserve);
-      const libreSpan = document.getElementById('envResteLibre');
-      libreSpan.textContent = formatMontant(libre);
-      libreSpan.style.color = libre < 0 ? 'var(--color-dette)' : 'var(--color-revenu)';
+      document.getElementById('fixeTotalMois').textContent = formatMontant(total);
+      document.getElementById('fixePayeMois').textContent = formatMontant(paye);
+      document.getElementById('fixeRestantMois').textContent = formatMontant(restant);
+      document.getElementById('btnPrefillFixes').style.display = depensesFixes.length === 0 ? 'inline-flex' : 'none';
 
-      const tbody = document.getElementById('tableEnveloppes');
-      if (enveloppes.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><span class="empty-state">Aucune enveloppe. Creez par exemple "Loyer" (Charge fixe) ou "Courses" (Budget/Cagnotte).</span></td></tr>';
+      const tbody = document.getElementById('tableFixes');
+      if (depensesFixes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucune charge fixe. Cliquez sur "Pre-remplir mes 7 charges" ou ajoutez-en une ci-dessus.</span></td></tr>';
         return;
       }
 
-      const sorted = [...enveloppes].sort((a, b) => {
-        if (a.type !== b.type) return a.type === 'fixe' ? -1 : 1;
-        return (a.nom || '').localeCompare(b.nom || '');
-      });
-
-      tbody.innerHTML = sorted.map(e => {
-        const alloue = round2(e.montantAlloue);
-        const dep = e.type === 'fixe' ? (e.payee ? alloue : 0) : round2(e.montantDepense);
-        const restant = getRestantEnveloppe(e);
-        const depasse = e.type === 'variable' && dep > alloue;
-        const isDone = e.type === 'fixe' && e.payee;
-
-        const statutCell = e.type === 'fixe'
-          ? `<label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;">
-               <input type="checkbox" class="check-box" ${e.payee ? 'checked' : ''} onchange="basculerPayeEnveloppe('${e._firebaseKey}', this.checked)" />
-               <span class="badge ${e.payee ? 'badge--ok' : 'badge--warn'}">${e.payee ? 'Paye' : 'A payer'}</span>
-             </label>`
-          : `<span class="badge ${depasse ? 'badge--danger' : (restant === 0 ? 'badge--ok' : 'badge--info')}">${depasse ? 'Depasse' : 'Active'}</span>`;
-
-        const actionBtns = e.type === 'fixe'
-          ? `<button class="btn btn--sm" title="Modifier montant" onclick="modifierAllocationEnveloppe('${e._firebaseKey}')">✎</button>
-             <button class="btn btn--sm btn--danger" onclick="supprimerEnveloppe('${e._firebaseKey}')">×</button>`
-          : `<button class="btn btn--sm btn--ok" title="Debiter une depense" onclick="debiterEnveloppe('${e._firebaseKey}')">- Debiter</button>
-             <button class="btn btn--sm" title="Alimenter / Modifier" onclick="modifierAllocationEnveloppe('${e._firebaseKey}')">+/-</button>
-             <button class="btn btn--sm btn--danger" onclick="supprimerEnveloppe('${e._firebaseKey}')">×</button>`;
-
+      const sorted = [...depensesFixes].sort((a, b) => (parseInt(a.jour) || 99) - (parseInt(b.jour) || 99) || (a.nom || '').localeCompare(b.nom || ''));
+      tbody.innerHTML = sorted.map(f => {
+        const checked = isFixePaye(f, selectedMonth);
         return `
-          <tr class="${isDone ? 'row-done' : ''}">
-            <td class="no-strike">${statutCell}</td>
-            <td><strong>${escapeHTML(e.nom)}</strong><br><small style="color:var(--text-secondary)">${escapeHTML(e.categorie || 'General')}</small></td>
-            <td><span class="badge">${e.type === 'fixe' ? 'Fixe' : 'Cagnotte'}</span></td>
-            <td class="amount-cell">${formatMontant(alloue)}</td>
-            <td class="amount-cell">${formatMontant(dep)}</td>
-            <td class="amount-cell" style="color:${depasse ? 'var(--color-dette)' : 'inherit'}">${formatMontant(restant)}</td>
-            <td class="actions-cell">${actionBtns}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // Rendu Wish List
-    function renderWishlist() {
-      const libre = getResteLibre();
-      const actives = wishlist.filter(w => !w.achete);
-      const totalActif = round2(actives.reduce((s, w) => s + (parseFloat(w.prix) || 0), 0));
-      document.getElementById('wishResteLibre').textContent = formatMontant(libre);
-      document.getElementById('wishTotalActif').textContent = formatMontant(totalActif);
-
-      const tbody = document.getElementById('tableWishlist');
-      if (wishlist.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><span class="empty-state">Votre Wish List est vide (Casque VR, Switch 2, iPad...).</span></td></tr>';
-        return;
-      }
-
-      const prioOrder = { 'Haute': 1, 'Moyenne': 2, 'Basse': 3 };
-      const sorted = [...wishlist].sort((a, b) => {
-        if (!!a.achete !== !!b.achete) return a.achete ? 1 : -1;
-        return (prioOrder[a.priorite] || 2) - (prioOrder[b.priorite] || 2);
-      });
-
-      tbody.innerHTML = sorted.map(w => {
-        const prix = round2(w.prix);
-        const manque = round2(prix - libre);
-        const prioClass = w.priorite === 'Haute' ? 'badge--danger' : (w.priorite === 'Moyenne' ? 'badge--warn' : '');
-        const budgetBadge = w.achete
-          ? `<span class="badge badge--ok">Achete (${formatDate(w.dateAchat)})</span>`
-          : (libre >= prix
-              ? `<span class="badge badge--ok">Financable</span>`
-              : `<span class="badge badge--warn">Manque ${formatMontant(manque)}</span>`);
-
-        return `
-          <tr class="${w.achete ? 'row-done' : ''}">
-            <td><strong>${escapeHTML(w.nom)}</strong>${w.note ? `<br><small style="color:var(--text-secondary)">${escapeHTML(w.note)}</small>` : ''}</td>
-            <td><span class="badge ${prioClass}">${escapeHTML(w.priorite || 'Moyenne')}</span></td>
-            <td class="amount-cell">${formatMontant(prix)}</td>
-            <td class="no-strike">${budgetBadge}</td>
+          <tr class="${checked ? 'row-done' : ''}">
+            <td class="no-strike">
+              <label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;">
+                <input type="checkbox" class="check-box" ${checked ? 'checked' : ''} onchange="basculerPayeFixe('${f._firebaseKey}', this.checked)" />
+                <span class="badge ${checked ? 'badge--ok' : 'badge--warn'}">${checked ? 'Paye' : 'A payer'}</span>
+              </label>
+            </td>
+            <td><strong>${escapeHTML(f.nom)}</strong></td>
+            <td>${f.jour ? 'Le ' + escapeHTML(f.jour) + ' du mois' : '—'}</td>
+            <td class="amount-cell">${formatMontant(f.montant)}</td>
             <td class="actions-cell">
-              ${!w.achete ? `<button class="btn btn--sm btn--ok" onclick="acheterWish('${w._firebaseKey}')">Acheter</button>` : ''}
-              <button class="btn btn--sm" onclick="modifierPrixWish('${w._firebaseKey}')">✎</button>
-              <button class="btn btn--sm btn--danger" onclick="supprimerWish('${w._firebaseKey}')">×</button>
+              <button class="btn btn--sm" title="Modifier montant" onclick="modifierChargeFixe('${f._firebaseKey}')">✎</button>
+              <button class="btn btn--sm btn--danger" onclick="supprimerChargeFixe('${f._firebaseKey}')">×</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    // Rendu Inventaire
+    // 3. Rendu Depenses a plafond + Inventaire + Courses + Historique
+    function renderPlafondBlock(bucket, prefix) {
+      const list = getDepensesBucketMois(bucket, selectedMonth);
+      const totalDep = round2(list.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
+      const max = round2(plafonds[bucket] || 0);
+      const reste = round2(max - totalDep);
+      const pct = max > 0 ? Math.min(100, Math.round((totalDep / max) * 100)) : (totalDep > 0 ? 100 : 0);
+
+      document.getElementById(prefix + 'Depense').textContent = formatMontant(totalDep);
+      document.getElementById(prefix + 'Plafond').textContent = formatMontant(max);
+      document.getElementById(prefix + 'Pct').textContent = (max > 0 ? Math.round((totalDep / max) * 100) : 0) + '%';
+
+      const bar = document.getElementById(prefix + 'Bar');
+      bar.style.width = pct + '%';
+      bar.className = 'progress-bar__fill ' + (reste < 0 ? '' : (pct >= 80 ? 'progress-bar__fill--warn' : 'progress-bar__fill--ok'));
+
+      const badge = document.getElementById(prefix + 'ResteBadge');
+      if (reste >= 0) {
+        badge.textContent = 'Reste ' + formatMontant(reste);
+        badge.className = 'badge ' + (pct >= 80 ? 'badge--warn' : 'badge--ok');
+      } else {
+        badge.textContent = 'Depasse de ' + formatMontant(Math.abs(reste));
+        badge.className = 'badge badge--danger';
+      }
+
+      const tbody = document.getElementById('table' + prefix.charAt(0).toUpperCase() + prefix.slice(1));
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Aucune depense ce mois.</span></td></tr>';
+      } else {
+        tbody.innerHTML = list.map(d => `
+          <tr>
+            <td>${formatDate(d.date)}</td>
+            <td>${escapeHTML(d.description)}</td>
+            <td class="amount-cell">${formatMontant(d.montant)}</td>
+            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
+          </tr>
+        `).join('');
+      }
+    }
+
     function renderInventaire() {
       const fZone = document.getElementById('filtreInvZone').value;
       const fStatut = document.getElementById('filtreInvStatut').value;
-      const tbody = document.getElementById('tableInventaire');
-
       let items = [...inventaire];
       if (fZone) items = items.filter(i => i.zone === fZone);
       if (fStatut === 'alerte') items = items.filter(i => i.statut === 'bas' || i.statut === 'epuise');
       else if (fStatut === 'ok') items = items.filter(i => i.statut === 'ok');
 
-      const statutOrder = { 'epuise': 1, 'bas': 2, 'ok': 3 };
-      items.sort((a, b) => (statutOrder[a.statut] || 3) - (statutOrder[b.statut] || 3) || (a.nom || '').localeCompare(b.nom || ''));
+      const order = { epuise: 1, bas: 2, ok: 3 };
+      items.sort((a,b) => (order[a.statut] || 3) - (order[b.statut] || 3) || (a.nom || '').localeCompare(b.nom || ''));
 
+      const tbody = document.getElementById('tableInventaire');
       if (items.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="4"><span class="empty-state">Aucun produit dans cet affichage.</span></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Inventaire vide.</span></td></tr>';
         return;
       }
-
       const labels = { ok: 'En stock', bas: 'Bas', epuise: 'Epuise' };
-      const classes = { ok: 'badge--ok', bas: 'badge--warn', epuise: 'badge--danger' };
-
+      const cls = { ok: 'badge--ok', bas: 'badge--warn', epuise: 'badge--danger' };
       tbody.innerHTML = items.map(i => `
         <tr>
           <td><strong>${escapeHTML(i.nom)}</strong></td>
           <td><span class="badge">${escapeHTML(i.zone || 'Placard')}</span></td>
-          <td><span class="badge badge--click ${classes[i.statut] || ''}" title="Cliquer pour changer l'etat" onclick="cyclerStatutInventaire('${i._firebaseKey}')">${labels[i.statut] || 'En stock'}</span></td>
+          <td><span class="badge badge--click ${cls[i.statut] || ''}" onclick="cyclerStatutInventaire('${i._firebaseKey}')">${labels[i.statut] || 'En stock'}</span></td>
           <td class="actions-cell">
-            <button class="btn btn--sm" title="Ajouter aux courses" onclick="envoyerVersCourses('${i._firebaseKey}')">+ Courses</button>
+            <button class="btn btn--sm" onclick="envoyerVersCourses('${i._firebaseKey}')">+ Courses</button>
             <button class="btn btn--sm btn--danger" onclick="supprimerInventaire('${i._firebaseKey}')">×</button>
           </td>
         </tr>
       `).join('');
     }
 
-    // Rendu Courses
     function renderCourses() {
       const fHorizon = document.getElementById('filtreCourseHorizon').value;
-      const tbody = document.getElementById('tableCourses');
       let items = [...courses];
       if (fHorizon) items = items.filter(c => c.horizon === fHorizon);
+      items.sort((a,b) => (!!a.coche === !!b.coche ? (a.horizon || '').localeCompare(b.horizon || '') : (a.coche ? 1 : -1)));
 
-      items.sort((a, b) => (!!a.coche === !!b.coche ? (a.horizon || '').localeCompare(b.horizon || '') : (a.coche ? 1 : -1)));
-
+      const tbody = document.getElementById('tableCourses');
       if (items.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="4"><span class="empty-state">Liste de courses vide.</span></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Liste de courses vide.</span></td></tr>';
         return;
       }
-
       tbody.innerHTML = items.map(c => `
         <tr class="${c.coche ? 'row-done' : ''}">
           <td class="no-strike"><input type="checkbox" class="check-box" ${c.coche ? 'checked' : ''} onchange="basculerCourse('${c._firebaseKey}', this.checked)" /></td>
-          <td><strong>${escapeHTML(c.nom)}</strong>${c.quantite ? ` <small style="color:var(--text-secondary)">(${escapeHTML(c.quantite)})</small>` : ''}</td>
+          <td><strong>${escapeHTML(c.nom)}</strong>${c.quantite ? ` <small class="muted">(${escapeHTML(c.quantite)})</small>` : ''}</td>
           <td><span class="badge ${c.horizon === 'semaine' ? 'badge--warn' : 'badge--info'}">${c.horizon === 'semaine' ? 'Semaine' : 'Mois'}</span></td>
           <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerCourse('${c._firebaseKey}')">×</button></td>
         </tr>
       `).join('');
     }
 
-    // Rendu Prets
+    function renderAllDepensesArchive() {
+      document.getElementById('countAllDep').textContent = depenses.length;
+      const tbody = document.getElementById('tableAllDepenses');
+      if (depenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucune depense enregistree.</span></td></tr>';
+        return;
+      }
+      tbody.innerHTML = depenses.map(d => `
+        <tr>
+          <td>${formatDate(d.date)}</td>
+          <td>${escapeHTML(d.description)}</td>
+          <td><span class="badge">${escapeHTML(d.categorie || 'Sans categorie')}</span></td>
+          <td class="amount-cell">${formatMontant(d.montant)}</td>
+          <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
+        </tr>
+      `).join('');
+    }
+
+    // 4. Rendu Cagnottes
+    function renderCagnottes() {
+      const libre = getResteLibre();
+      const actives = cagnottes.filter(c => !c.achete);
+      const totDepose = getTotalCagnottesActives();
+      const restantWish = round2(actives.filter(c => c.type === 'wishlist' && c.objectif > 0).reduce((s, c) => s + Math.max(0, c.objectif - (parseFloat(c.montantDepose) || 0)), 0));
+
+      const libreEl = document.getElementById('cagResteLibre');
+      libreEl.textContent = formatMontant(libre);
+      libreEl.style.color = libre < 0 ? 'var(--color-dette)' : 'var(--color-revenu)';
+      document.getElementById('cagTotalDepose').textContent = formatMontant(totDepose);
+      document.getElementById('cagObjectifRestant').textContent = formatMontant(restantWish);
+
+      const tbody = document.getElementById('tableCagnottes');
+      if (cagnottes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6"><span class="empty-state">Aucune cagnotte. Creez par exemple "Livret A" ou "iPad 9e gen".</span></td></tr>';
+        return;
+      }
+
+      const sorted = [...cagnottes].sort((a, b) => {
+        if (!!a.achete !== !!b.achete) return a.achete ? 1 : -1;
+        if (a.type !== b.type) return a.type === 'epargne' ? -1 : 1;
+        return (a.nom || '').localeCompare(b.nom || '');
+      });
+
+      tbody.innerHTML = sorted.map(c => {
+        const dep = round2(c.montantDepose);
+        const obj = round2(c.objectif);
+        const pct = obj > 0 ? Math.min(100, Math.round((dep / obj) * 100)) : 100;
+        const atteint = obj > 0 && dep >= obj;
+
+        const progHTML = c.achete
+          ? `<span class="badge badge--ok">Achete le ${formatDate(c.dateAchat)} (${formatMontant(c.prixReel || dep)})</span>`
+          : (obj > 0
+              ? `<div class="progress-bar-wrap">
+                   <div class="progress-bar"><div class="progress-bar__fill ${atteint ? 'progress-bar__fill--ok' : 'progress-bar__fill--info'}" style="width:${pct}%;"></div></div>
+                   <span class="progress-text">${pct}%</span>
+                 </div>`
+              : `<span class="badge badge--cagnotte">Epargne libre</span>`);
+
+        return `
+          <tr class="${c.achete ? 'row-done' : ''}">
+            <td><strong>${escapeHTML(c.nom)}</strong></td>
+            <td><span class="badge ${c.type === 'epargne' ? 'badge--cagnotte' : 'badge--info'}">${c.type === 'epargne' ? 'Economies' : 'Wish List'}</span></td>
+            <td class="amount-cell">${formatMontant(dep)}</td>
+            <td class="amount-cell">${obj > 0 ? formatMontant(obj) : 'Libre'}</td>
+            <td class="no-strike">${progHTML}</td>
+            <td class="actions-cell">
+              ${!c.achete ? `<button class="btn btn--sm btn--ok" onclick="mouvementCagnotte('${c._firebaseKey}', 1)">+ Deposer</button>` : ''}
+              ${!c.achete && dep > 0 ? `<button class="btn btn--sm" title="Retirer" onclick="mouvementCagnotte('${c._firebaseKey}', -1)">-</button>` : ''}
+              ${!c.achete && c.type === 'wishlist' ? `<button class="btn btn--sm btn--primary" onclick="acheterCagnotte('${c._firebaseKey}')">Acheter</button>` : ''}
+              <button class="btn btn--sm" title="Modifier objectif" onclick="modifierCagnotte('${c._firebaseKey}')">✎</button>
+              <button class="btn btn--sm btn--danger" onclick="supprimerCagnotte('${c._firebaseKey}')">×</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 5. Rendu Dettes (inchange)
     function renderPrets() {
       const tbody = document.getElementById('tablePrets');
       if (prets.length === 0) {
-        tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
       } else {
         tbody.innerHTML = prets.map(p => {
           const total = parseFloat(p.montantTotal) || 0;
@@ -978,46 +1089,137 @@
     function updateAll() {
       updateDashboard();
       renderRevenus();
-      renderDepenses();
-      renderEnveloppes();
-      renderWishlist();
+      renderFixes();
+      renderPlafondBlock('vivres', 'vivres');
+      renderPlafondBlock('sorties', 'sorties');
       renderInventaire();
       renderCourses();
+      renderAllDepensesArchive();
+      renderCagnottes();
       renderPrets();
     }
 
-    // Actions Revenus / Depenses / Prets
+    // === ACTIONS ===
+
+    // Revenus
     window.ajouterRevenu = async () => {
       if (!user) return;
       const desc = document.getElementById('revDesc').value.trim();
       const montant = parseFloat(document.getElementById('revMontant').value);
-      const cat = document.getElementById('revCategorie').value.trim();
+      const categorie = document.getElementById('revCategorie').value;
       const date = document.getElementById('revDate').value || dateAujourdhui();
       if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant > 0 requis.');
-      await refRevenus.push({ description: desc, montant: round2(montant), categorie: cat || 'Sans categorie', date });
+      await refRevenus.push({ description: desc, montant: round2(montant), categorie, date });
       document.getElementById('revDesc').value = '';
       document.getElementById('revMontant').value = '';
-      document.getElementById('revCategorie').value = '';
       document.getElementById('revDate').value = dateAujourdhui();
     };
-
     window.supprimerRevenu = async (key) => {
       if (!user || !confirm('Supprimer ce revenu ?')) return;
       await refRevenus.child(key).remove();
     };
 
-    window.ajouterDepense = async () => {
+    // Depenses Fixes
+    window.preremplirChargesFixes = async () => {
       if (!user) return;
-      const desc = document.getElementById('depDesc').value.trim();
-      const montant = parseFloat(document.getElementById('depMontant').value);
-      const cat = document.getElementById('depCategorie').value.trim();
-      const date = document.getElementById('depDate').value || dateAujourdhui();
+      const defaults = [
+        'Loyer', 'Assurance habitation', 'Assurance trottinette',
+        'Frais telephoniques', 'Electricite', 'Remboursement pret bancaire', 'Abonnements'
+      ];
+      for (const nom of defaults) {
+        await refFixes.push({ nom, montant: 0, jour: '', paiements: {} });
+      }
+    };
+
+    window.ajouterChargeFixe = async () => {
+      if (!user) return;
+      const nom = document.getElementById('fixeNom').value.trim();
+      const montant = parseFloat(document.getElementById('fixeMontant').value);
+      const jour = document.getElementById('fixeJour').value.trim();
+      if (!nom || isNaN(montant) || montant < 0) return alert('Nom et montant >= 0 requis.');
+      await refFixes.push({ nom, montant: round2(montant), jour, paiements: {} });
+      document.getElementById('fixeNom').value = '';
+      document.getElementById('fixeMontant').value = '';
+      document.getElementById('fixeJour').value = '';
+    };
+
+    window.modifierChargeFixe = async (key) => {
+      if (!user) return;
+      const f = depensesFixes.find(item => item._firebaseKey === key);
+      if (!f) return;
+      const s = prompt(`Montant mensuel pour "${f.nom}" (€) :`, (f.montant || 0).toFixed(2));
+      if (s === null) return;
+      const val = parseFloat(s.replace(',', '.'));
+      if (isNaN(val) || val < 0) return alert('Montant invalide.');
+      await refFixes.child(key).update({ montant: round2(val) });
+    };
+
+    window.basculerPayeFixe = async (key, checked) => {
+      if (!user) return;
+      const f = depensesFixes.find(item => item._firebaseKey === key);
+      if (!f) return;
+
+      if (checked) {
+        let montantAPayer = round2(f.montant);
+        if (montantAPayer <= 0) {
+          const s = prompt(`Montant paye pour "${f.nom}" ce mois (€) :`);
+          if (s === null) { renderFixes(); return; }
+          const val = parseFloat(s.replace(',', '.'));
+          if (isNaN(val) || val <= 0) { alert('Montant invalide.'); renderFixes(); return; }
+          montantAPayer = round2(val);
+          await refFixes.child(key).update({ montant: montantAPayer });
+        }
+        const datePaiement = selectedMonth === moisActuel() ? dateAujourdhui() : (selectedMonth + '-01');
+        const depRef = refDepenses.push();
+        await depRef.set({
+          description: f.nom + ' (' + formatMoisLabel(selectedMonth) + ')',
+          montant: montantAPayer,
+          categorie: 'Depenses fixes',
+          bucket: 'fixe',
+          fixeKey: key,
+          date: datePaiement
+        });
+        await refFixes.child(key).child('paiements').child(selectedMonth).set(depRef.key);
+      } else {
+        const depKey = f.paiements && f.paiements[selectedMonth];
+        if (!confirm(`Annuler le paiement de "${f.nom}" pour ${formatMoisLabel(selectedMonth)} ?`)) {
+          renderFixes();
+          return;
+        }
+        if (depKey && typeof depKey === 'string') {
+          await refDepenses.child(depKey).remove();
+        }
+        await refFixes.child(key).child('paiements').child(selectedMonth).remove();
+      }
+    };
+
+    window.supprimerChargeFixe = async (key) => {
+      if (!user || !confirm('Supprimer cette charge fixe de la liste ? (Les paiements passes restent dans l\'historique)')) return;
+      await refFixes.child(key).remove();
+    };
+
+    // Depenses a plafond
+    window.modifierPlafond = async (bucket) => {
+      if (!user) return;
+      const nom = bucket === 'vivres' ? 'Vivres, Hygiene & Menage' : 'Sorties & Imprevus';
+      const s = prompt(`Plafond mensuel pour "${nom}" (€) :`, (plafonds[bucket] || 0).toFixed(2));
+      if (s === null) return;
+      const val = parseFloat(s.replace(',', '.'));
+      if (isNaN(val) || val < 0) return alert('Montant invalide.');
+      await refPlafonds.child(bucket).set(round2(val));
+    };
+
+    window.ajouterDepensePlafond = async (bucket) => {
+      if (!user) return;
+      const desc = document.getElementById(bucket + 'Desc').value.trim();
+      const montant = parseFloat(document.getElementById(bucket + 'Montant').value);
+      const date = document.getElementById(bucket + 'Date').value || dateAujourdhui();
       if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant > 0 requis.');
-      await refDepenses.push({ description: desc, montant: round2(montant), categorie: cat || 'Sans categorie', date });
-      document.getElementById('depDesc').value = '';
-      document.getElementById('depMontant').value = '';
-      document.getElementById('depCategorie').value = '';
-      document.getElementById('depDate').value = dateAujourdhui();
+      const categorie = bucket === 'vivres' ? 'Vivres & Consommables' : 'Sorties & Imprevus';
+      await refDepenses.push({ description: desc, montant: round2(montant), categorie, bucket, date });
+      document.getElementById(bucket + 'Desc').value = '';
+      document.getElementById(bucket + 'Montant').value = '';
+      document.getElementById(bucket + 'Date').value = dateAujourdhui();
     };
 
     window.supprimerDepense = async (key) => {
@@ -1025,6 +1227,146 @@
       await refDepenses.child(key).remove();
     };
 
+    // Inventaire & Courses
+    window.ajouterInventaire = async () => {
+      if (!user) return;
+      const nom = document.getElementById('invNom').value.trim();
+      const zone = document.getElementById('invZone').value;
+      const statut = document.getElementById('invStatut').value;
+      if (!nom) return alert('Nom du produit requis.');
+      await refInventaire.push({ nom, zone, statut });
+      document.getElementById('invNom').value = '';
+    };
+    window.cyclerStatutInventaire = async (key) => {
+      if (!user) return;
+      const item = inventaire.find(i => i._firebaseKey === key);
+      if (!item) return;
+      const next = item.statut === 'ok' ? 'bas' : (item.statut === 'bas' ? 'epuise' : 'ok');
+      await refInventaire.child(key).update({ statut: next });
+    };
+    window.envoyerVersCourses = async (key) => {
+      if (!user) return;
+      const item = inventaire.find(i => i._firebaseKey === key);
+      if (!item) return;
+      if (courses.some(c => c.nom.toLowerCase() === item.nom.toLowerCase() && !c.coche)) {
+        return alert(`"${item.nom}" est deja dans la liste de courses.`);
+      }
+      const horizon = item.zone === 'Hygiene & Menage' ? 'mois' : 'semaine';
+      await refCourses.push({ nom: item.nom, quantite: '1', horizon, coche: false, inventaireKey: key });
+    };
+    window.supprimerInventaire = async (key) => {
+      if (!user || !confirm('Retirer ce produit ?')) return;
+      await refInventaire.child(key).remove();
+    };
+    window.ajouterCourse = async () => {
+      if (!user) return;
+      const nom = document.getElementById('courseNom').value.trim();
+      const quantite = document.getElementById('courseQte').value.trim();
+      const horizon = document.getElementById('courseHorizon').value;
+      if (!nom) return alert('Article requis.');
+      await refCourses.push({ nom, quantite, horizon, coche: false, inventaireKey: '' });
+      document.getElementById('courseNom').value = '';
+      document.getElementById('courseQte').value = '';
+    };
+    window.basculerCourse = async (key, checked) => {
+      if (!user) return;
+      await refCourses.child(key).update({ coche: checked });
+    };
+    window.supprimerCourse = async (key) => {
+      if (!user) return;
+      await refCourses.child(key).remove();
+    };
+    window.validerCoursesCochees = async () => {
+      if (!user) return;
+      const coches = courses.filter(c => c.coche);
+      if (coches.length === 0) return alert('Cochez d\'abord les articles achetes.');
+      const depVivres = round2(getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
+      const restePlafond = round2((plafonds.vivres || 0) - depVivres);
+      const ticket = prompt(`${coches.length} article(s) remis "En stock".\nReste plafond Vivres : ${formatMontant(restePlafond)}\n\nMontant du ticket de caisse (€) a ajouter au plafond Vivres ?\n(Laissez vide pour ne pas creer de depense)`);
+      if (ticket === null) return;
+
+      for (const c of coches) {
+        const invMatch = inventaire.find(i => i._firebaseKey === c.inventaireKey || i.nom.toLowerCase() === c.nom.toLowerCase());
+        if (invMatch) await refInventaire.child(invMatch._firebaseKey).update({ statut: 'ok' });
+        await refCourses.child(c._firebaseKey).remove();
+      }
+      if (ticket.trim() !== '') {
+        const val = parseFloat(ticket.replace(',', '.'));
+        if (!isNaN(val) && val > 0) {
+          await refDepenses.push({
+            description: 'Courses (' + coches.length + ' articles)',
+            montant: round2(val),
+            categorie: 'Vivres & Consommables',
+            bucket: 'vivres',
+            date: dateAujourdhui()
+          });
+        }
+      }
+    };
+
+    // Cagnottes
+    window.ajouterCagnotte = async () => {
+      if (!user) return;
+      const nom = document.getElementById('cagNom').value.trim();
+      const type = document.getElementById('cagType').value;
+      const objectif = parseFloat(document.getElementById('cagObjectif').value) || 0;
+      const init = parseFloat(document.getElementById('cagInit').value) || 0;
+      if (!nom) return alert('Nom requis.');
+      if (type === 'wishlist' && objectif <= 0) return alert('Indiquez un prix objectif > 0 pour une Wish List.');
+      await refCagnottes.push({ nom, type, objectif: round2(objectif), montantDepose: round2(init), achete: false, dateAchat: '' });
+      document.getElementById('cagNom').value = '';
+      document.getElementById('cagObjectif').value = '';
+      document.getElementById('cagInit').value = '0';
+    };
+
+    window.mouvementCagnotte = async (key, signe) => {
+      if (!user) return;
+      const c = cagnottes.find(item => item._firebaseKey === key);
+      if (!c) return;
+      const libre = getResteLibre();
+      const msg = signe > 0
+        ? `Deposer dans "${c.nom}" (Reste libre dispo : ${formatMontant(libre)})\nMontant a deposer (€) :`
+        : `Retirer de "${c.nom}" (Actuellement depose : ${formatMontant(c.montantDepose)})\nMontant a retirer (€) :`;
+      const s = prompt(msg);
+      if (s === null) return;
+      const val = parseFloat(s.replace(',', '.'));
+      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
+      const nouveau = round2((parseFloat(c.montantDepose) || 0) + signe * val);
+      if (nouveau < 0) return alert('Impossible de retirer plus que le montant depose.');
+      await refCagnottes.child(key).update({ montantDepose: nouveau });
+    };
+
+    window.acheterCagnotte = async (key) => {
+      if (!user) return;
+      const c = cagnottes.find(item => item._firebaseKey === key);
+      if (!c) return;
+      const defPrix = (c.objectif > 0 ? c.objectif : c.montantDepose) || 0;
+      const s = prompt(`Acheter "${c.nom}" ?\nDepose dans la cagnotte : ${formatMontant(c.montantDepose)}\nConfirmez le prix reel paye (€) :`, defPrix.toFixed(2));
+      if (s === null) return;
+      const val = parseFloat(s.replace(',', '.'));
+      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
+      const auj = dateAujourdhui();
+      await refDepenses.push({ description: c.nom, montant: round2(val), categorie: 'Cagnotte / Wish List', bucket: 'cagnotte', date: auj });
+      await refCagnottes.child(key).update({ achete: true, prixReel: round2(val), dateAchat: auj });
+    };
+
+    window.modifierCagnotte = async (key) => {
+      if (!user) return;
+      const c = cagnottes.find(item => item._firebaseKey === key);
+      if (!c) return;
+      const s = prompt(`Nouvel objectif (€) pour "${c.nom}" (0 = libre) :`, (c.objectif || 0).toFixed(2));
+      if (s === null) return;
+      const val = parseFloat(s.replace(',', '.'));
+      if (isNaN(val) || val < 0) return alert('Valeur invalide.');
+      await refCagnottes.child(key).update({ objectif: round2(val) });
+    };
+
+    window.supprimerCagnotte = async (key) => {
+      if (!user || !confirm('Supprimer cette cagnotte ?')) return;
+      await refCagnottes.child(key).remove();
+    };
+
+    // Dettes (inchange)
     window.ajouterPret = async () => {
       if (!user) return;
       const motif = document.getElementById('pretMotif').value.trim();
@@ -1037,12 +1379,10 @@
       document.getElementById('pretMontant').value = '';
       document.getElementById('pretRembourse').value = '0';
     };
-
     window.supprimerPret = async (key) => {
       if (!user || !confirm('Supprimer ce pret ?')) return;
       await refPrets.child(key).remove();
     };
-
     window.modifierRemboursementPret = async (key) => {
       if (!user) return;
       const p = prets.find(item => item._firebaseKey === key);
@@ -1054,223 +1394,17 @@
       await refPrets.child(key).update({ montantRembourse: round2(val) });
     };
 
-    // Actions Enveloppes (avec automatismes)
-    window.ajouterEnveloppe = async () => {
-      if (!user) return;
-      const nom = document.getElementById('envNom').value.trim();
-      const type = document.getElementById('envType').value;
-      const montant = parseFloat(document.getElementById('envMontant').value);
-      const categorie = document.getElementById('envCategorie').value.trim() || nom;
-      if (!nom || isNaN(montant) || montant < 0) return alert('Nom et montant >= 0 requis.');
-      await refEnveloppes.push({ nom, type, montantAlloue: round2(montant), montantDepense: 0, payee: false, categorie });
-      document.getElementById('envNom').value = '';
-      document.getElementById('envMontant').value = '';
-      document.getElementById('envCategorie').value = '';
-    };
-
-    window.basculerPayeEnveloppe = async (key, checked) => {
-      if (!user) return;
-      const env = enveloppes.find(e => e._firebaseKey === key);
-      if (!env) return;
-      if (checked) {
-        const ajouterDep = confirm(`Marquer "${env.nom}" (${formatMontant(env.montantAlloue)}) comme paye ET enregistrer automatiquement la depense ?`);
-        await refEnveloppes.child(key).update({ payee: true });
-        if (ajouterDep && env.montantAlloue > 0) {
-          await refDepenses.push({
-            description: env.nom,
-            montant: round2(env.montantAlloue),
-            categorie: env.categorie || 'Charges fixes',
-            date: dateAujourdhui()
-          });
-        }
-      } else {
-        await refEnveloppes.child(key).update({ payee: false });
-      }
-    };
-
-    window.debiterEnveloppe = async (key) => {
-      if (!user) return;
-      const env = enveloppes.find(e => e._firebaseKey === key);
-      if (!env) return;
-      const s = prompt(`Debiter de "${env.nom}" (Restant : ${formatMontant(getRestantEnveloppe(env))})\nMontant depense (€) :`);
-      if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
-      const desc = prompt('Description de la depense :', env.nom) || env.nom;
-      await refEnveloppes.child(key).update({ montantDepense: round2((parseFloat(env.montantDepense) || 0) + val) });
-      await refDepenses.push({
-        description: desc.trim(),
-        montant: round2(val),
-        categorie: env.categorie || env.nom,
-        date: dateAujourdhui()
-      });
-    };
-
-    window.modifierAllocationEnveloppe = async (key) => {
-      if (!user) return;
-      const env = enveloppes.find(e => e._firebaseKey === key);
-      if (!env) return;
-      const nv = prompt(`Enveloppe : ${env.nom}\nMontant alloue actuel : ${formatMontant(env.montantAlloue)}\nNouveau montant alloue (€) :`, (env.montantAlloue || 0).toFixed(2));
-      if (nv === null) return;
-      const val = parseFloat(nv.replace(',', '.'));
-      if (isNaN(val) || val < 0) return alert('Montant invalide.');
-      await refEnveloppes.child(key).update({ montantAlloue: round2(val) });
-    };
-
-    window.nouveauMoisEnveloppes = async () => {
-      if (!user || enveloppes.length === 0) return;
-      if (!confirm('Demarrer un nouveau mois ?\n- Les charges fixes seront decochees ("A payer").\n- Les depenses des enveloppes variables seront remises a 0 € (vos allocations sont conservees).')) return;
-      for (const e of enveloppes) {
-        if (e.type === 'fixe') await refEnveloppes.child(e._firebaseKey).update({ payee: false });
-        else await refEnveloppes.child(e._firebaseKey).update({ montantDepense: 0 });
-      }
-    };
-
-    window.supprimerEnveloppe = async (key) => {
-      if (!user || !confirm('Supprimer cette enveloppe ?')) return;
-      await refEnveloppes.child(key).remove();
-    };
-
-    // Actions Wish List
-    window.ajouterWish = async () => {
-      if (!user) return;
-      const nom = document.getElementById('wishNom').value.trim();
-      const prix = parseFloat(document.getElementById('wishPrix').value);
-      const priorite = document.getElementById('wishPriorite').value;
-      const note = document.getElementById('wishNote').value.trim();
-      if (!nom || isNaN(prix) || prix <= 0) return alert('Article et prix > 0 requis.');
-      await refWishlist.push({ nom, prix: round2(prix), priorite, note, achete: false, dateAchat: '' });
-      document.getElementById('wishNom').value = '';
-      document.getElementById('wishPrix').value = '';
-      document.getElementById('wishNote').value = '';
-    };
-
-    window.acheterWish = async (key) => {
-      if (!user) return;
-      const w = wishlist.find(item => item._firebaseKey === key);
-      if (!w) return;
-      const s = prompt(`Acheter "${w.nom}" ?\nConfirmez le prix reel paye (€) pour creer la depense :`, (w.prix || 0).toFixed(2));
-      if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
-      const auj = dateAujourdhui();
-      await refDepenses.push({ description: w.nom, montant: round2(val), categorie: 'Wish List', date: auj });
-      await refWishlist.child(key).update({ achete: true, prix: round2(val), dateAchat: auj });
-    };
-
-    window.modifierPrixWish = async (key) => {
-      if (!user) return;
-      const w = wishlist.find(item => item._firebaseKey === key);
-      if (!w) return;
-      const s = prompt(`Nouveau prix estime pour "${w.nom}" (€) :`, (w.prix || 0).toFixed(2));
-      if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val <= 0) return alert('Prix invalide.');
-      await refWishlist.child(key).update({ prix: round2(val) });
-    };
-
-    window.supprimerWish = async (key) => {
-      if (!user || !confirm('Supprimer cet article de la Wish List ?')) return;
-      await refWishlist.child(key).remove();
-    };
-
-    // Actions Inventaire & Courses
-    window.ajouterInventaire = async () => {
-      if (!user) return;
-      const nom = document.getElementById('invNom').value.trim();
-      const zone = document.getElementById('invZone').value;
-      const statut = document.getElementById('invStatut').value;
-      if (!nom) return alert('Nom du produit requis.');
-      await refInventaire.push({ nom, zone, statut });
-      document.getElementById('invNom').value = '';
-    };
-
-    window.cyclerStatutInventaire = async (key) => {
-      if (!user) return;
-      const item = inventaire.find(i => i._firebaseKey === key);
-      if (!item) return;
-      const next = item.statut === 'ok' ? 'bas' : (item.statut === 'bas' ? 'epuise' : 'ok');
-      await refInventaire.child(key).update({ statut: next });
-    };
-
-    window.envoyerVersCourses = async (key) => {
-      if (!user) return;
-      const item = inventaire.find(i => i._firebaseKey === key);
-      if (!item) return;
-      const deja = courses.some(c => c.nom.toLowerCase() === item.nom.toLowerCase() && !c.coche);
-      if (deja) return alert(`"${item.nom}" est deja dans la liste de courses.`);
-      const horizon = item.zone === 'Hygiene & Maison' ? 'mois' : 'semaine';
-      await refCourses.push({ nom: item.nom, quantite: '1', horizon, coche: false, inventaireKey: key });
-    };
-
-    window.supprimerInventaire = async (key) => {
-      if (!user || !confirm('Retirer ce produit de l\'inventaire ?')) return;
-      await refInventaire.child(key).remove();
-    };
-
-    window.ajouterCourse = async () => {
-      if (!user) return;
-      const nom = document.getElementById('courseNom').value.trim();
-      const quantite = document.getElementById('courseQte').value.trim();
-      const horizon = document.getElementById('courseHorizon').value;
-      if (!nom) return alert('Article requis.');
-      await refCourses.push({ nom, quantite, horizon, coche: false, inventaireKey: '' });
-      document.getElementById('courseNom').value = '';
-      document.getElementById('courseQte').value = '';
-    };
-
-    window.basculerCourse = async (key, checked) => {
-      if (!user) return;
-      await refCourses.child(key).update({ coche: checked });
-    };
-
-    window.supprimerCourse = async (key) => {
-      if (!user) return;
-      await refCourses.child(key).remove();
-    };
-
-    window.validerCoursesCochees = async () => {
-      if (!user) return;
-      const coches = courses.filter(c => c.coche);
-      if (coches.length === 0) return alert('Cochez d\'abord les articles achetes.');
-
-      const ticket = prompt(`${coches.length} article(s) achete(s).\nIls vont etre remis "En stock" dans votre inventaire.\n\nMontant total du ticket de caisse (€) a ajouter dans Depenses ?\n(Laissez vide pour ne pas creer de depense)`);
-      if (ticket === null) return;
-
-      for (const c of coches) {
-        const invMatch = inventaire.find(i => i._firebaseKey === c.inventaireKey || i.nom.toLowerCase() === c.nom.toLowerCase());
-        if (invMatch) {
-          await refInventaire.child(invMatch._firebaseKey).update({ statut: 'ok' });
-        }
-        await refCourses.child(c._firebaseKey).remove();
-      }
-
-      if (ticket.trim() !== '') {
-        const val = parseFloat(ticket.replace(',', '.'));
-        if (!isNaN(val) && val > 0) {
-          await refDepenses.push({
-            description: 'Courses (' + coches.length + ' articles)',
-            montant: round2(val),
-            categorie: 'Alimentation',
-            date: dateAujourdhui()
-          });
-        }
-      }
-    };
-
-    // Theme & Onglets
+    // Theme & Navigation
     function applyTheme() {
       document.body.setAttribute('data-theme', currentTheme);
       document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☽' : '☀';
       document.getElementById('themeLabel').textContent = currentTheme === 'dark' ? 'Sombre' : 'Clair';
     }
-
     window.toggleTheme = async () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
       applyTheme();
       if (user) await refTheme.set(currentTheme);
     };
-
     window.switchTab = (name) => {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
@@ -1280,18 +1414,18 @@
       updateAll();
     };
 
-    // Export / Import (100% compatible V1 & V2)
+    // Export / Import
     function stripKeys(arr) { return arr.map(({ _firebaseKey, ...rest }) => rest); }
-
     window.exportToJSON = () => {
       const data = {
         revenus: stripKeys(revenus),
         depenses: stripKeys(depenses),
-        prets: stripKeys(prets),
-        enveloppes: stripKeys(enveloppes),
-        wishlist: stripKeys(wishlist),
+        depensesFixes: stripKeys(depensesFixes),
+        cagnottes: stripKeys(cagnottes),
         inventaire: stripKeys(inventaire),
         courses: stripKeys(courses),
+        prets: stripKeys(prets),
+        plafonds,
         exportDate: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1311,18 +1445,16 @@
       reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target.result);
-          if (!data.revenus || !data.depenses || !data.prets) {
-            return alert('Fichier JSON invalide.');
-          }
-          if (!confirm('Ceci va remplacer vos donnees actuelles par la sauvegarde. Continuer ?')) return;
+          if (!data.revenus || !data.depenses || !data.prets) return alert('Fichier JSON invalide.');
+          if (!confirm('Ceci va remplacer vos donnees actuelles. Continuer ?')) return;
           const sets = [
             [refRevenus, data.revenus],
             [refDepenses, data.depenses],
-            [refPrets, data.prets],
-            [refEnveloppes, data.enveloppes],
-            [refWishlist, data.wishlist],
+            [refFixes, data.depensesFixes],
+            [refCagnottes, data.cagnottes],
             [refInventaire, data.inventaire],
-            [refCourses, data.courses]
+            [refCourses, data.courses],
+            [refPrets, data.prets]
           ];
           for (const [ref, arr] of sets) {
             if (Array.isArray(arr)) {
@@ -1330,6 +1462,7 @@
               for (const item of arr) await ref.push(item);
             }
           }
+          if (data.plafonds) await refPlafonds.set(data.plafonds);
           alert('Donnees importees avec succes !');
         } catch (err) {
           alert('Erreur de lecture : ' + err.message);
@@ -1343,29 +1476,32 @@
       if (typeof XLSX === 'undefined') return alert('Librairie SheetJS manquante.');
       const wb = XLSX.utils.book_new();
       const resume = [
-        ['Espace Budget Personnel'],
-        ['Solde actuel', getSoldeActuel()],
-        ['Enveloppes restantes', getTotalEnveloppesRestant()],
+        ['Espace Budget Personnel', formatMoisLabel(selectedMonth)],
+        ['Solde reel', getSoldeReel()],
         ['Reste libre', getResteLibre()],
-        ['Revenus totaux', revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0)],
-        ['Depenses totales', depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0)],
-        ['Dette restante', Math.max(0, prets.reduce((s, p) => s + (parseFloat(p.montantTotal) || 0), 0) - prets.reduce((s, p) => s + (parseFloat(p.montantRembourse) || 0), 0))]
+        ['Total cagnottes actives', getTotalCagnottesActives()],
+        ['Fixes restants du mois', getFixesRestantsMois(selectedMonth)],
+        ['Revenus totaux', getTotalRevenus()],
+        ['Depenses totales', getTotalDepenses()]
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Resume');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(revenus)), 'Revenus');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depenses)), 'Depenses');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(enveloppes)), 'Enveloppes');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(wishlist)), 'Wish List');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depensesFixes)), 'Depenses Fixes');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depenses)), 'Historique Depenses');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(cagnottes)), 'Cagnottes');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(inventaire)), 'Inventaire');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(courses)), 'Courses');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(prets)), 'Prets Garant');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(prets)), 'Dettes');
       XLSX.writeFile(wb, 'Espace_Budget_' + dateAujourdhui() + '.xlsx');
     };
 
-    // Init & raccourcis
+    // Init
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('revDate').value = dateAujourdhui();
-      document.getElementById('depDate').value = dateAujourdhui();
+      const auj = dateAujourdhui();
+      document.getElementById('monthPicker').value = selectedMonth;
+      document.getElementById('revDate').value = auj;
+      document.getElementById('vivresDate').value = auj;
+      document.getElementById('sortiesDate').value = auj;
       document.getElementById('loginPassword').addEventListener('keydown', e => {
         if (e.key === 'Enter') window.authentifier();
       });
