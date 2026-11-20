@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" id="metaThemeColor" />
   <title>Mon Espace Budget</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -60,7 +61,7 @@
       --color-libre: #1565c0;
       --color-cagnotte: #7b1fa2;
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html { font-size:15px; scroll-behavior:smooth; }
     body {
       background-color: var(--bg);
@@ -68,6 +69,8 @@
       font-family: var(--font-body);
       line-height:1.5;
       min-height:100vh;
+      overflow-x:hidden;
+      touch-action:manipulation;
       transition: background-color 0.25s ease, color 0.25s ease;
     }
     .app-container { max-width:1160px; margin:0 auto; padding:1.5rem 1rem 3rem; display:none; }
@@ -78,6 +81,8 @@
       font-family:var(--font-mono); font-size:0.78rem;
     }
     .error-banner--visible { display:block; }
+
+    /* HEADER */
     .header {
       display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
       gap:1rem; margin-bottom:1.5rem; padding:1.15rem 1.4rem;
@@ -85,7 +90,9 @@
       box-shadow:var(--shadow);
     }
     .header__left { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .header__title-row { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; }
     .header__title { font-family:var(--font-heading); font-size:1.45rem; letter-spacing:-0.5px; text-transform:uppercase; }
+    .mobile-tools-btn { display:none; }
     .month-box {
       display:inline-flex; align-items:center; gap:0.5rem;
       font-family:var(--font-mono); font-size:0.75rem; text-transform:uppercase;
@@ -96,8 +103,10 @@
       font-family:var(--font-mono); font-size:0.85rem; font-weight:700; outline:none; cursor:pointer;
     }
     .header__actions { display:flex; gap:0.55rem; flex-wrap:wrap; align-items:center; }
+
+    /* BOUTONS */
     .btn {
-      display:inline-flex; align-items:center; gap:0.35rem;
+      display:inline-flex; align-items:center; justify-content:center; gap:0.35rem;
       font-family:var(--font-heading); font-size:0.75rem; text-transform:uppercase;
       letter-spacing:0.5px; padding:0.52rem 0.95rem; cursor:pointer;
       background:var(--surface); color:var(--text);
@@ -117,22 +126,22 @@
     .btn--primary { background:var(--text); color:var(--bg); font-weight:900; }
     .btn--primary:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
     .theme-toggle {
-      display:flex; align-items:center; gap:0.45rem; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; gap:0.45rem; cursor:pointer;
       font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase;
       letter-spacing:1px; user-select:none; padding:0.42rem 0.75rem;
       border:2px solid var(--border); background:var(--surface); color:var(--text);
       transition:all var(--transition);
     }
     .theme-toggle:hover { background:var(--text); color:var(--bg); }
+
+    /* DASHBOARD */
     .dashboard {
       display:grid; grid-template-columns:repeat(3, 1fr);
       gap:1rem; margin-bottom:1.8rem;
     }
-    @media (max-width: 820px) { .dashboard { grid-template-columns:repeat(2, 1fr); } }
-    @media (max-width: 520px) { .dashboard { grid-template-columns:1fr; } }
     .card {
       background:var(--card-bg); border:var(--border-width) solid var(--border);
-      padding:1rem 1rem; box-shadow:var(--shadow); border-left-width:8px;
+      padding:1rem; box-shadow:var(--shadow); border-left-width:8px; min-width:0;
     }
     .card--solde { background:var(--card-solde-bg); border-left-color:var(--border); }
     .card--libre { background:var(--card-libre-bg); border-left-color:var(--color-libre); }
@@ -140,10 +149,12 @@
     .card--revenu { background:var(--card-revenu-bg); border-left-color:var(--color-revenu); }
     .card--depense { background:var(--card-depense-bg); border-left-color:var(--color-depense); }
     .card--dette { background:var(--card-dette-bg); border-left-color:var(--color-dette); }
-    .card__label { font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:1.6px; color:var(--text-secondary); margin-bottom:0.3rem; }
-    .card__amount { font-family:var(--font-mono); font-size:1.55rem; font-weight:700; letter-spacing:-0.8px; }
-    .card__sub { font-family:var(--font-mono); font-size:0.64rem; color:var(--text-secondary); margin-top:0.2rem; }
+    .card__label { font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-secondary); margin-bottom:0.3rem; }
+    .card__amount { font-family:var(--font-mono); font-size:1.55rem; font-weight:700; letter-spacing:-0.8px; word-break:break-word; }
+    .card__sub { font-family:var(--font-mono); font-size:0.64rem; color:var(--text-secondary); margin-top:0.2rem; line-height:1.35; }
     .card__amount--negative { color:var(--color-dette); }
+
+    /* ONGLETS */
     .tabs { display:flex; gap:0; margin-bottom:0; flex-wrap:wrap; }
     .tab-btn {
       font-family:var(--font-heading); font-size:0.78rem; text-transform:uppercase;
@@ -151,6 +162,7 @@
       background:var(--surface); color:var(--text);
       border:var(--border-width) solid var(--border); border-bottom:none;
       margin-right:-3px; transition:all var(--transition); position:relative; z-index:1;
+      white-space:nowrap;
     }
     .tab-btn:hover { background:var(--text); color:var(--bg); }
     .tab-btn--active {
@@ -165,16 +177,18 @@
     }
     .tab-panel--active { display:block; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+    /* SECTIONS & FORMULAIRES */
     .section-box {
       background:var(--surface); border:2px solid var(--border);
-      padding:1rem; margin-bottom:1.25rem;
+      padding:1rem; margin-bottom:1.25rem; min-width:0;
     }
     .section-title {
       font-family:var(--font-heading); font-size:0.95rem; text-transform:uppercase;
       margin-bottom:0.85rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;
     }
     .summary-strip {
-      display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center;
+      display:flex; flex-wrap:wrap; gap:0.85rem 1.25rem; justify-content:space-between; align-items:center;
       padding:0.8rem 1rem; margin-bottom:1.2rem;
       background:var(--surface); border:2px solid var(--border);
       font-family:var(--font-mono); font-size:0.8rem;
@@ -182,6 +196,7 @@
     .form-row { display:flex; flex-wrap:wrap; gap:0.55rem; margin-bottom:1rem; align-items:flex-end; }
     .form-group { display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:105px; }
     .form-group label { font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:1.3px; color:var(--text-secondary); font-weight:700; }
+    .fg-submit { flex:0 0 auto; min-width:auto; }
     .input, .select {
       font-family:var(--font-mono); font-size:0.84rem; padding:0.5rem 0.65rem;
       background:var(--bg); color:var(--text);
@@ -191,8 +206,11 @@
     }
     .filter-bar { display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
     .filter-bar select { flex:1; min-width:150px; }
+
+    /* TABLEAUX DESKTOP */
     .table-wrapper { overflow-x:auto; border:2px solid var(--border); margin-bottom:1rem; }
     table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:0.78rem; min-width:540px; }
+    .table--compact { min-width:340px; }
     thead th {
       background:var(--text); color:var(--bg); padding:0.55rem 0.65rem;
       font-family:var(--font-heading); font-size:0.64rem; text-transform:uppercase;
@@ -200,13 +218,13 @@
     }
     tbody td, tfoot td { padding:0.52rem 0.65rem; border:2px solid var(--border-light); vertical-align:middle; }
     tbody tr:hover { background:var(--bg); }
-    .row-done { opacity:0.58; }
+    .row-done { opacity:0.62; }
     .row-done td { text-decoration:line-through; }
     .row-done .actions-cell, .row-done .no-strike { text-decoration:none; }
     .amount-cell { text-align:right; font-weight:700; white-space:nowrap; }
     .actions-cell { text-align:center; white-space:nowrap; display:flex; gap:0.32rem; justify-content:center; align-items:center; }
     .progress-bar-wrap { display:flex; align-items:center; gap:0.5rem; min-width:110px; }
-    .progress-bar { flex:1; height:14px; border:2px solid var(--border); background:var(--bg); }
+    .progress-bar { flex:1; height:14px; border:2px solid var(--border); background:var(--bg); min-width:60px; }
     .progress-bar__fill { height:100%; background:var(--color-dette); transition:width 0.3s ease; }
     .progress-bar__fill--ok { background:var(--color-revenu); }
     .progress-bar__fill--warn { background:var(--color-depense); }
@@ -224,13 +242,14 @@
     .badge--danger { border-color:var(--color-dette); color:var(--color-dette); }
     .badge--info { border-color:var(--color-libre); color:var(--color-libre); }
     .badge--cagnotte { border-color:var(--color-cagnotte); color:var(--color-cagnotte); }
-    .check-box { width:18px; height:18px; cursor:pointer; accent-color:var(--color-revenu); vertical-align:middle; }
+    .check-box { width:20px; height:20px; cursor:pointer; accent-color:var(--color-revenu); vertical-align:middle; }
     .split-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-    @media (max-width: 920px) { .split-grid { grid-template-columns:1fr; } }
     .divider { border:none; border-top:3px dashed var(--border-light); margin:1.5rem 0; }
-    .empty-state { display:block; text-align:center; padding:1.6rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.82rem; }
+    .empty-state { display:block; text-align:center; padding:1.4rem 0.75rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.82rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
+
+    /* LOGIN & MODALE */
     .login-screen, .modal-overlay {
       display:flex; position:fixed; top:0; left:0; width:100%; height:100%;
       background:var(--bg); justify-content:center; align-items:center; z-index:999; padding:1rem;
@@ -241,6 +260,7 @@
     .login-box, .modal-box {
       background:var(--surface); border:var(--border-width) solid var(--border);
       padding:1.8rem; max-width:440px; width:100%; box-shadow:var(--shadow);
+      max-height:90vh; overflow-y:auto;
     }
     .login-box h2, .modal-box h2 { font-family:var(--font-heading); text-transform:uppercase; margin-bottom:0.6rem; font-size:1.15rem; }
     .login-box p { font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary); margin-bottom:1.4rem; }
@@ -249,6 +269,157 @@
     .modal-actions { display:flex; gap:0.6rem; justify-content:flex-end; margin-top:1.2rem; }
     .login-error { color:#ff4444; font-family:var(--font-mono); font-size:0.75rem; margin-top:0.75rem; display:none; }
     .muted { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); }
+
+    /* TABLETTE */
+    @media (max-width: 960px) {
+      .split-grid { grid-template-columns:1fr; }
+    }
+
+    /* ANDROID / MOBILE (<= 768px) */
+    @media (max-width: 768px) {
+      .app-container { padding:0.75rem 0.65rem 2.25rem; }
+
+      /* En-tete compact + tiroir Outils */
+      .header {
+        padding:0.85rem; gap:0.65rem; margin-bottom:0.9rem;
+        flex-direction:column; align-items:stretch;
+        box-shadow:3px 3px 0px var(--border);
+      }
+      .header__left { flex-direction:column; align-items:stretch; gap:0.6rem; width:100%; }
+      .header__title-row { width:100%; }
+      .header__title { font-size:1.12rem; }
+      .mobile-tools-btn {
+        display:inline-flex; padding:0.42rem 0.7rem; font-size:0.7rem;
+        box-shadow:2px 2px 0px var(--border); border-width:2px;
+      }
+      .month-box { justify-content:space-between; padding:0.4rem 0.65rem; width:100%; }
+      .month-box input { font-size:16px; }
+      .header__actions {
+        display:none; width:100%; padding-top:0.65rem;
+        border-top:2px dashed var(--border-light);
+      }
+      .header__actions--open {
+        display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;
+      }
+      .header__actions .btn, .header__actions .theme-toggle {
+        width:100%; min-height:42px; font-size:0.7rem; padding:0.5rem 0.6rem;
+      }
+      .header__actions .btn--danger { grid-column:1 / -1; }
+
+      /* Dashboard compact 2x3 */
+      .dashboard {
+        grid-template-columns:repeat(2, 1fr);
+        gap:0.6rem; margin-bottom:1rem;
+      }
+      .card {
+        padding:0.72rem 0.68rem; border-left-width:6px;
+        box-shadow:3px 3px 0px var(--border);
+      }
+      .card__label { font-size:0.56rem; letter-spacing:0.8px; margin-bottom:0.2rem; }
+      .card__amount { font-size:1.15rem; letter-spacing:-0.5px; }
+      .card__sub { font-size:0.58rem; line-height:1.3; }
+
+      /* Onglets glissables au doigt */
+      .tabs {
+        flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+        gap:0.4rem; padding:0.1rem 0.1rem 0.65rem; margin-bottom:0.15rem;
+        scrollbar-width:none;
+      }
+      .tabs::-webkit-scrollbar { display:none; }
+      .tab-btn {
+        flex:0 0 auto; border:2px solid var(--border); margin-right:0;
+        top:0; padding:0.62rem 0.88rem; font-size:0.72rem;
+        box-shadow:2px 2px 0px var(--border); min-height:42px;
+      }
+      .tab-btn--active {
+        top:0; background:var(--text); color:var(--bg);
+        border-color:var(--border); box-shadow:none;
+      }
+
+      /* Panneaux & sections */
+      .tab-panel { padding:0.85rem 0.72rem; box-shadow:3px 3px 0px var(--border); }
+      .section-box { padding:0.78rem; margin-bottom:0.9rem; }
+      .section-title { font-size:0.86rem; }
+      .summary-strip {
+        padding:0.7rem 0.75rem; gap:0.45rem 0.8rem; font-size:0.74rem;
+        flex-direction:column; align-items:flex-start;
+      }
+      .summary-strip .btn { width:100%; }
+
+      /* Formulaires tactiles (16px = pas de zoom auto sur Android) */
+      .form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.55rem; margin-bottom:0.9rem; }
+      .form-group { min-width:0 !important; max-width:none !important; }
+      .fg-full, .fg-submit { grid-column:1 / -1; }
+      .fg-submit .btn { width:100%; min-height:44px; font-size:0.78rem; }
+      .input, .select { font-size:16px; min-height:44px; padding:0.52rem 0.62rem; }
+      .filter-bar { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
+      .filter-bar select { min-width:0; max-width:none !important; }
+      .filter-bar--single { grid-template-columns:1fr; }
+
+      /* Boutons tactiles */
+      .btn { min-height:42px; }
+      .btn--sm { min-height:36px; min-width:36px; padding:0.35rem 0.68rem; font-size:0.68rem; }
+      .check-box { width:22px; height:22px; }
+
+      /* TABLEAUX -> CARTES EMPILEES (ZERO SCROLL HORIZONTAL) */
+      .table-wrapper { border:none; overflow-x:visible; margin-bottom:0.75rem; }
+      table.resp-table, table.table--compact { display:block; min-width:0; width:100%; }
+      table.resp-table thead { display:none; }
+      table.resp-table tbody, table.resp-table tfoot {
+        display:flex; flex-direction:column; gap:0.65rem; width:100%;
+      }
+      table.resp-table tfoot { margin-top:0.65rem; }
+      table.resp-table tbody tr, table.resp-table tfoot tr {
+        display:block; border:2px solid var(--border);
+        background:var(--surface); box-shadow:2px 2px 0px var(--border);
+        padding:0.25rem 0.72rem;
+      }
+      table.resp-table tbody tr.empty-row {
+        border:2px dashed var(--border-light); box-shadow:none; background:transparent; padding:0;
+      }
+      table.resp-table tbody tr.empty-row td {
+        display:block; border:none; padding:0; text-align:center;
+      }
+      table.resp-table tbody tr.empty-row td::before { display:none; }
+      table.resp-table tbody td, table.resp-table tfoot td {
+        display:flex; justify-content:space-between; align-items:center;
+        gap:0.75rem; border:none; border-bottom:1px dashed var(--border-light);
+        padding:0.46rem 0; text-align:right; font-size:0.8rem;
+      }
+      table.resp-table tbody td:last-child, table.resp-table tfoot td:last-child {
+        border-bottom:none;
+      }
+      table.resp-table td[data-label]::before {
+        content: attr(data-label);
+        font-family:var(--font-heading); font-size:0.6rem; text-transform:uppercase;
+        letter-spacing:0.7px; color:var(--text-secondary); text-align:left;
+        flex-shrink:0; text-decoration:none; display:inline-block;
+      }
+      table.resp-table .mobile-hide { display:none !important; }
+      table.resp-table td.amount-cell { white-space:normal; }
+      table.resp-table td.actions-cell {
+        justify-content:flex-end; flex-wrap:wrap; padding:0.52rem 0 0.35rem;
+      }
+      table.resp-table td.actions-cell::before { margin-right:auto; }
+      table.resp-table .progress-bar-wrap {
+        flex:1; max-width:190px; min-width:110px; justify-content:flex-end;
+      }
+      table.resp-table .card-head-cell {
+        font-weight:900; border-bottom:2px solid var(--border); padding-bottom:0.5rem;
+      }
+      table.resp-table tr.row-done td::before { text-decoration:none; }
+
+      /* Modale mobile */
+      .login-box, .modal-box { padding:1.25rem; }
+      .modal-actions { flex-direction:column-reverse; }
+      .modal-actions .btn { width:100%; }
+    }
+
+    @media (max-width: 380px) {
+      .card__amount { font-size:1.02rem; }
+      .form-row { grid-template-columns:1fr; }
+      .filter-bar { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body data-theme="dark">
@@ -272,7 +443,7 @@
   </div>
 
   <!-- Fenetre modale universelle d'edition -->
-  <div class="modal-overlay" id="editModal">
+  <div class="modal-overlay" id="editModal" onclick="if (event.target === this) fermerModal()">
     <div class="modal-box">
       <h2 id="editModalTitle">Modifier</h2>
       <div id="editModalBody"></div>
@@ -288,13 +459,16 @@
 
     <header class="header">
       <div class="header__left">
-        <h1 class="header__title">Mon Espace Budget</h1>
+        <div class="header__title-row">
+          <h1 class="header__title">Mon Espace Budget</h1>
+          <button class="btn mobile-tools-btn" id="mobileToolsToggle" onclick="toggleMobileMenu()">☰ Outils</button>
+        </div>
         <label class="month-box">
           <span>Mois :</span>
           <input type="month" id="monthPicker" onchange="changerMois(this.value)" />
         </label>
       </div>
-      <div class="header__actions">
+      <div class="header__actions" id="headerActions">
         <button class="btn btn--primary" onclick="exportToExcel()">Export Excel</button>
         <button class="btn" onclick="exportToJSON()">Export JSON</button>
         <button class="btn" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
@@ -306,7 +480,7 @@
       </div>
     </header>
 
-    <!-- DASHBOARD 6 CARTES (MENSUEL SAUF WISH LIST & DETTES) -->
+    <!-- DASHBOARD 6 CARTES (3x2 PC / 2x3 ANDROID) -->
     <section class="dashboard">
       <div class="card card--solde">
         <p class="card__label">Solde (<span class="lbl-mois">mois</span>)</p>
@@ -352,9 +526,10 @@
     <!-- ONGLET 1 : REVENUS -->
     <section class="tab-panel tab-panel--active" id="panelRevenus">
       <div class="form-row">
-        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Solde compte bancaire, Alternance, APL..."></div>
-        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="any" min="0"></div>
-        <div class="form-group" style="max-width:225px;">
+        <div class="form-group fg-full"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Solde compte bancaire, Alternance, APL..."></div>
+        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="any" min="0" inputmode="decimal"></div>
+        <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
+        <div class="form-group fg-full" style="max-width:225px;">
           <label>Categorie</label>
           <select class="select" id="revCategorie">
             <option value="Salaires">Salaires (Alternance / Job)</option>
@@ -363,8 +538,7 @@
             <option value="Solde bancaire">Solde bancaire (Reste compte)</option>
           </select>
         </div>
-        <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterRevenu()">Ajouter</button></div>
+        <div class="form-group fg-submit"><button class="btn" onclick="ajouterRevenu()">Ajouter</button></div>
       </div>
       <div class="filter-bar">
         <select id="filtreRevenuPeriode" class="select" style="max-width:200px;" onchange="renderRevenus()">
@@ -380,14 +554,14 @@
         </select>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table class="resp-table">
           <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
           <tbody id="tableRevenus"></tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="3">Total affiche</td>
-              <td class="amount-cell" id="revTotalFiltre">0,00 €</td>
-              <td></td>
+              <td colspan="3" class="mobile-hide">Total affiche</td>
+              <td class="amount-cell" data-label="Total affiche" id="revTotalFiltre">0,00 €</td>
+              <td class="mobile-hide"></td>
             </tr>
           </tfoot>
         </table>
@@ -403,13 +577,13 @@
         <button class="btn btn--sm" id="btnPrefillFixes" style="display:none;" onclick="preremplirChargesFixes()">Pre-remplir mes 7 charges</button>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Charge fixe mensuelle</label><input type="text" class="input" id="fixeNom" placeholder="Ex: Loyer, Assurance trottinette, Electricite..."></div>
-        <div class="form-group" style="max-width:150px;"><label>Montant / mois (€)</label><input type="number" class="input" id="fixeMontant" placeholder="0.00" step="any" min="0"></div>
-        <div class="form-group" style="max-width:140px;"><label>Jour prelevement</label><input type="number" class="input" id="fixeJour" placeholder="Ex: 5" min="1" max="31"></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterChargeFixe()">Ajouter</button></div>
+        <div class="form-group fg-full"><label>Charge fixe mensuelle</label><input type="text" class="input" id="fixeNom" placeholder="Ex: Loyer, Assurance trottinette, Electricite..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant / mois (€)</label><input type="number" class="input" id="fixeMontant" placeholder="0.00" step="any" min="0" inputmode="decimal"></div>
+        <div class="form-group" style="max-width:140px;"><label>Jour prelevement</label><input type="number" class="input" id="fixeJour" placeholder="Ex: 5" min="1" max="31" inputmode="numeric"></div>
+        <div class="form-group fg-submit"><button class="btn" onclick="ajouterChargeFixe()">Ajouter</button></div>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table class="resp-table">
           <thead>
             <tr>
               <th>Statut (<span class="lbl-mois">mois</span>)</th>
@@ -444,13 +618,13 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Course / Achat</label><input type="text" class="input" id="vivresDesc" placeholder="Ex: Lidl, Lessive..."></div>
-            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="vivresMontant" placeholder="0.00" step="any" min="0.01"></div>
+            <div class="form-group fg-full"><label>Course / Achat</label><input type="text" class="input" id="vivresDesc" placeholder="Ex: Lidl, Lessive..."></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="vivresMontant" placeholder="0.00" step="any" min="0.01" inputmode="decimal"></div>
             <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="vivresDate"></div>
-            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('vivres')">+</button></div>
+            <div class="form-group fg-submit"><button class="btn btn--sm" onclick="ajouterDepensePlafond('vivres')">+ Ajouter</button></div>
           </div>
           <div class="table-wrapper" style="margin-bottom:0;">
-            <table style="min-width:340px;">
+            <table class="resp-table table--compact">
               <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
               <tbody id="tableVivres"></tbody>
             </table>
@@ -474,13 +648,13 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Sortie / Imprevu</label><input type="text" class="input" id="sortiesDesc" placeholder="Ex: Resto amis, Coiffeur..."></div>
-            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="sortiesMontant" placeholder="0.00" step="any" min="0.01"></div>
+            <div class="form-group fg-full"><label>Sortie / Imprevu</label><input type="text" class="input" id="sortiesDesc" placeholder="Ex: Resto amis, Coiffeur..."></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="sortiesMontant" placeholder="0.00" step="any" min="0.01" inputmode="decimal"></div>
             <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="sortiesDate"></div>
-            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('sorties')">+</button></div>
+            <div class="form-group fg-submit"><button class="btn btn--sm" onclick="ajouterDepensePlafond('sorties')">+ Ajouter</button></div>
           </div>
           <div class="table-wrapper" style="margin-bottom:0;">
-            <table style="min-width:340px;">
+            <table class="resp-table table--compact">
               <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
               <tbody id="tableSorties"></tbody>
             </table>
@@ -498,7 +672,7 @@
             <span class="muted">Clic statut = changer</span>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Produit</label><input type="text" class="input" id="invNom" placeholder="Ex: Riz, Oeufs, Gel douche..."></div>
+            <div class="form-group fg-full"><label>Produit</label><input type="text" class="input" id="invNom" placeholder="Ex: Riz, Oeufs, Gel douche..."></div>
             <div class="form-group" style="max-width:155px;">
               <label>Zone</label>
               <select class="select" id="invZone">
@@ -515,7 +689,7 @@
                 <option value="epuise">Epuise</option>
               </select>
             </div>
-            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterInventaire()">+</button></div>
+            <div class="form-group fg-submit"><button class="btn btn--sm" onclick="ajouterInventaire()">+ Ajouter</button></div>
           </div>
           <div class="filter-bar">
             <select id="filtreInvZone" class="select" onchange="renderInventaire()">
@@ -531,7 +705,7 @@
             </select>
           </div>
           <div class="table-wrapper">
-            <table style="min-width:340px;">
+            <table class="resp-table table--compact">
               <thead><tr><th>Produit</th><th>Zone</th><th>Etat</th><th style="text-align:center">Action</th></tr></thead>
               <tbody id="tableInventaire"></tbody>
             </table>
@@ -544,7 +718,7 @@
             <button class="btn btn--sm btn--ok" onclick="validerCoursesCochees()">Valider achats → Plafond</button>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>A acheter</label><input type="text" class="input" id="courseNom" placeholder="Ex: Bananes, Lait, Savon..."></div>
+            <div class="form-group fg-full"><label>A acheter</label><input type="text" class="input" id="courseNom" placeholder="Ex: Bananes, Lait, Savon..."></div>
             <div class="form-group" style="max-width:80px;"><label>Qte</label><input type="text" class="input" id="courseQte" placeholder="1"></div>
             <div class="form-group" style="max-width:120px;">
               <label>Besoin</label>
@@ -553,9 +727,9 @@
                 <option value="mois">Mois</option>
               </select>
             </div>
-            <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterCourse()">+</button></div>
+            <div class="form-group fg-submit"><button class="btn btn--sm" onclick="ajouterCourse()">+ Ajouter</button></div>
           </div>
-          <div class="filter-bar">
+          <div class="filter-bar filter-bar--single">
             <select id="filtreCourseHorizon" class="select" onchange="renderCourses()">
               <option value="">Semaine + Mois</option>
               <option value="semaine">Cette semaine</option>
@@ -563,7 +737,7 @@
             </select>
           </div>
           <div class="table-wrapper">
-            <table style="min-width:340px;">
+            <table class="resp-table table--compact">
               <thead><tr><th style="width:36px;">OK</th><th>Article</th><th>Besoin</th><th style="text-align:center">×</th></tr></thead>
               <tbody id="tableCourses"></tbody>
             </table>
@@ -581,20 +755,20 @@
         <div><strong>Reste a financer (Wish List) :</strong> <span id="cagObjectifRestant">0,00 €</span></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Nom de la cagnotte</label><input type="text" class="input" id="cagNom" placeholder="Ex: Livret A, iPad 9e gen, Casque VR, Switch 2..."></div>
-        <div class="form-group" style="max-width:185px;">
+        <div class="form-group fg-full"><label>Nom de la cagnotte</label><input type="text" class="input" id="cagNom" placeholder="Ex: Livret A, iPad 9e gen, Casque VR, Switch 2..."></div>
+        <div class="form-group fg-full" style="max-width:185px;">
           <label>Type</label>
           <select class="select" id="cagType">
             <option value="wishlist">Wish List (Achat)</option>
             <option value="epargne">Economies / Livret A</option>
           </select>
         </div>
-        <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="any" min="0"></div>
-        <div class="form-group" style="max-width:165px;"><label>Deja depose anterieur (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="any" min="0" value="0"></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterCagnotte()">Creer</button></div>
+        <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="any" min="0" inputmode="decimal"></div>
+        <div class="form-group" style="max-width:165px;"><label>Deja depose (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="any" min="0" value="0" inputmode="decimal"></div>
+        <div class="form-group fg-submit"><button class="btn" onclick="ajouterCagnotte()">Creer</button></div>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table class="resp-table">
           <thead>
             <tr>
               <th>Cagnotte</th>
@@ -613,20 +787,26 @@
     <!-- ONGLET 5 : DETTES -->
     <section class="tab-panel" id="panelDettes">
       <div class="form-row">
-        <div class="form-group"><label>Motif du pret</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarite..."></div>
-        <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="any" min="0.01"></div>
-        <div class="form-group" style="max-width:150px;"><label>Deja rembourse (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="any" min="0" value="0"></div>
-        <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterPret()">Ajouter pret</button></div>
+        <div class="form-group fg-full"><label>Motif du pret</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarite..."></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="any" min="0.01" inputmode="decimal"></div>
+        <div class="form-group" style="max-width:150px;"><label>Deja rembourse (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="any" min="0" value="0" inputmode="decimal"></div>
+        <div class="form-group fg-submit"><button class="btn" onclick="ajouterPret()">Ajouter pret</button></div>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Motif</th><th style="text-align:right">Total</th><th style="text-align:right">Rembourse</th><th style="text-align:right">Restant</th><th>Progression</th><th style="text-align:center">Action</th></tr></thead><tbody id="tablePrets"></tbody></table></div>
+      <div class="table-wrapper">
+        <table class="resp-table">
+          <thead><tr><th>Motif</th><th style="text-align:right">Total</th><th style="text-align:right">Rembourse</th><th style="text-align:right">Restant</th><th>Progression</th><th style="text-align:center">Action</th></tr></thead>
+          <tbody id="tablePrets"></tbody>
+        </table>
+      </div>
       <div class="table-wrapper" style="margin-top:1rem;">
-        <table><thead><tr><th colspan="5">Progression globale</th></tr></thead>
+        <table class="resp-table">
+          <thead><tr><th colspan="5">Progression globale</th></tr></thead>
           <tbody><tr class="total-row">
-            <td>Total Garant</td>
-            <td id="totalDu" class="amount-cell">0,00 €</td>
-            <td id="totalRembourse" class="amount-cell">0,00 €</td>
-            <td id="totalRestant" class="amount-cell">0,00 €</td>
-            <td><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" id="barreGlobaleFill" style="width:0%;"></div></div><span id="pourcentageGlobal">0%</span></div></td>
+            <td data-label="Synthese" class="card-head-cell">Total Garant</td>
+            <td data-label="Total du" id="totalDu" class="amount-cell">0,00 €</td>
+            <td data-label="Rembourse" id="totalRembourse" class="amount-cell">0,00 €</td>
+            <td data-label="Restant" id="totalRestant" class="amount-cell">0,00 €</td>
+            <td data-label="Progression"><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" id="barreGlobaleFill" style="width:0%;"></div></div><span class="progress-text" id="pourcentageGlobal">0%</span></div></td>
           </tr></tbody>
         </table>
       </div>
@@ -745,6 +925,14 @@
         alert('Erreur enregistrement : ' + (err.message || err));
       }
     }
+
+    // Menu outils mobile
+    window.toggleMobileMenu = () => {
+      const menu = document.getElementById('headerActions');
+      const btn = document.getElementById('mobileToolsToggle');
+      const open = menu.classList.toggle('header__actions--open');
+      btn.textContent = open ? '✕ Fermer' : '☰ Outils';
+    };
 
     // Modale universelle
     function ouvrirModal(title, bodyHtml, onSave) {
@@ -1005,18 +1193,18 @@
 
       const tbody = document.getElementById('tableRevenus');
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucun revenu sur cette selection.</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5"><span class="empty-state">Aucun revenu sur cette selection.</span></td></tr>';
         return;
       }
       tbody.innerHTML = list.map(r => {
         const badgeCls = r.categorie === 'Solde bancaire' ? 'badge--info' : 'badge--ok';
         return `
           <tr>
-            <td>${formatDate(r.date)}</td>
-            <td>${escapeHTML(r.description)}</td>
-            <td><span class="badge ${badgeCls}">${escapeHTML(r.categorie || 'Autre')}</span></td>
-            <td class="amount-cell">${formatMontant(r.montant)}</td>
-            <td class="actions-cell">
+            <td data-label="Date">${formatDate(r.date)}</td>
+            <td data-label="Description"><strong>${escapeHTML(r.description)}</strong></td>
+            <td data-label="Categorie"><span class="badge ${badgeCls}">${escapeHTML(r.categorie || 'Autre')}</span></td>
+            <td data-label="Montant" class="amount-cell">${formatMontant(r.montant)}</td>
+            <td data-label="Actions" class="actions-cell">
               <button class="btn btn--sm" title="Modifier" onclick="modifierRevenu('${r._firebaseKey}')">✎</button>
               <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerRevenu('${r._firebaseKey}')">×</button>
             </td>
@@ -1038,7 +1226,7 @@
 
       const tbody = document.getElementById('tableFixes');
       if (depensesFixes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucune charge fixe. Cliquez sur "Pre-remplir mes 7 charges" ou ajoutez-en une ci-dessus.</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5"><span class="empty-state">Aucune charge fixe. Cliquez sur "Pre-remplir mes 7 charges" ou ajoutez-en une ci-dessus.</span></td></tr>';
         return;
       }
 
@@ -1052,16 +1240,16 @@
           : (checked ? '<span class="badge badge--ok">Paye</span>' : '<span class="badge badge--warn">A payer</span>');
         return `
           <tr class="${checked ? 'row-done' : ''}">
-            <td class="no-strike">
+            <td data-label="Statut" class="no-strike">
               <label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;">
                 <input type="checkbox" class="check-box" ${checked ? 'checked' : ''} onchange="basculerPayeFixe('${f._firebaseKey}', this.checked)" />
                 ${badgeHtml}
               </label>
             </td>
-            <td><strong>${escapeHTML(f.nom)}</strong></td>
-            <td>${f.jour ? 'Le ' + escapeHTML(f.jour) + ' du mois' : '—'}</td>
-            <td class="amount-cell">${formatMontant(montantAffiche)}</td>
-            <td class="actions-cell">
+            <td data-label="Charge fixe"><strong>${escapeHTML(f.nom)}</strong></td>
+            <td data-label="Echeance">${f.jour ? 'Le ' + escapeHTML(f.jour) + ' du mois' : '—'}</td>
+            <td data-label="Montant" class="amount-cell">${formatMontant(montantAffiche)}</td>
+            <td data-label="Actions" class="actions-cell">
               ${!horsSolde ? `<button class="btn btn--sm btn--info" title="Deja paye : marquer regle sans deduire du solde" onclick="marquerHorsSoldeFixe('${f._firebaseKey}')">Hors solde</button>` : ''}
               <button class="btn btn--sm" title="Modifier" onclick="modifierChargeFixe('${f._firebaseKey}')">✎</button>
               <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerChargeFixe('${f._firebaseKey}')">×</button>
@@ -1102,14 +1290,14 @@
 
       const tbody = document.getElementById('table' + prefix.charAt(0).toUpperCase() + prefix.slice(1));
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Aucune depense ce mois.</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><span class="empty-state">Aucune depense ce mois.</span></td></tr>';
       } else {
         tbody.innerHTML = list.map(d => `
           <tr>
-            <td>${formatDate(d.date)}</td>
-            <td>${escapeHTML(d.description)}</td>
-            <td class="amount-cell">${formatMontant(d.montant)}</td>
-            <td class="actions-cell">
+            <td data-label="Date">${formatDate(d.date)}</td>
+            <td data-label="Description"><strong>${escapeHTML(d.description)}</strong></td>
+            <td data-label="Montant" class="amount-cell">${formatMontant(d.montant)}</td>
+            <td data-label="Actions" class="actions-cell">
               <button class="btn btn--sm" title="Modifier" onclick="modifierDepense('${d._firebaseKey}')">✎</button>
               <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerDepense('${d._firebaseKey}')">×</button>
             </td>
@@ -1131,17 +1319,17 @@
 
       const tbody = document.getElementById('tableInventaire');
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Inventaire vide.</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><span class="empty-state">Inventaire vide.</span></td></tr>';
         return;
       }
       const labels = { ok: 'En stock', bas: 'Bas', epuise: 'Epuise' };
       const cls = { ok: 'badge--ok', bas: 'badge--warn', epuise: 'badge--danger' };
       tbody.innerHTML = items.map(i => `
         <tr>
-          <td><strong>${escapeHTML(i.nom)}</strong></td>
-          <td><span class="badge">${escapeHTML(i.zone || 'Placard')}</span></td>
-          <td><span class="badge badge--click ${cls[i.statut] || ''}" onclick="cyclerStatutInventaire('${i._firebaseKey}')">${labels[i.statut] || 'En stock'}</span></td>
-          <td class="actions-cell">
+          <td data-label="Produit"><strong>${escapeHTML(i.nom)}</strong></td>
+          <td data-label="Zone"><span class="badge">${escapeHTML(i.zone || 'Placard')}</span></td>
+          <td data-label="Etat"><span class="badge badge--click ${cls[i.statut] || ''}" onclick="cyclerStatutInventaire('${i._firebaseKey}')">${labels[i.statut] || 'En stock'}</span></td>
+          <td data-label="Actions" class="actions-cell">
             <button class="btn btn--sm" onclick="envoyerVersCourses('${i._firebaseKey}')">+ Courses</button>
             <button class="btn btn--sm btn--danger" onclick="supprimerInventaire('${i._firebaseKey}')">×</button>
           </td>
@@ -1157,15 +1345,15 @@
 
       const tbody = document.getElementById('tableCourses');
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4"><span class="empty-state">Liste de courses vide.</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><span class="empty-state">Liste de courses vide.</span></td></tr>';
         return;
       }
       tbody.innerHTML = items.map(c => `
         <tr class="${c.coche ? 'row-done' : ''}">
-          <td class="no-strike"><input type="checkbox" class="check-box" ${c.coche ? 'checked' : ''} onchange="basculerCourse('${c._firebaseKey}', this.checked)" /></td>
-          <td><strong>${escapeHTML(c.nom)}</strong>${c.quantite ? ` <small class="muted">(${escapeHTML(c.quantite)})</small>` : ''}</td>
-          <td><span class="badge ${c.horizon === 'semaine' ? 'badge--warn' : 'badge--info'}">${c.horizon === 'semaine' ? 'Semaine' : 'Mois'}</span></td>
-          <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerCourse('${c._firebaseKey}')">×</button></td>
+          <td data-label="Achete" class="no-strike"><input type="checkbox" class="check-box" ${c.coche ? 'checked' : ''} onchange="basculerCourse('${c._firebaseKey}', this.checked)" /></td>
+          <td data-label="Article"><strong>${escapeHTML(c.nom)}</strong>${c.quantite ? ` <small class="muted">(${escapeHTML(c.quantite)})</small>` : ''}</td>
+          <td data-label="Besoin"><span class="badge ${c.horizon === 'semaine' ? 'badge--warn' : 'badge--info'}">${c.horizon === 'semaine' ? 'Semaine' : 'Mois'}</span></td>
+          <td data-label="Action" class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerCourse('${c._firebaseKey}')">×</button></td>
         </tr>
       `).join('');
     }
@@ -1186,7 +1374,7 @@
 
       const tbody = document.getElementById('tableCagnottes');
       if (cagnottes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6"><span class="empty-state">Aucune cagnotte. Creez par exemple "Livret A" ou "iPad 9e gen".</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6"><span class="empty-state">Aucune cagnotte. Creez par exemple "Livret A" ou "iPad 9e gen".</span></td></tr>';
         return;
       }
 
@@ -1214,15 +1402,14 @@
 
         return `
           <tr class="${c.achete ? 'row-done' : ''}">
-            <td><strong>${escapeHTML(c.nom)}</strong></td>
-            <td><span class="badge ${c.type === 'epargne' ? 'badge--cagnotte' : 'badge--info'}">${c.type === 'epargne' ? 'Economies' : 'Wish List'}</span></td>
-            <td class="amount-cell">
-              ${formatMontant(dep)}
-              ${depCeMois > 0 && !c.achete ? `<br><small class="muted">+${formatMontant(depCeMois)} (${formatMoisLabel(selectedMonth)})</small>` : ''}
+            <td data-label="Cagnotte"><strong>${escapeHTML(c.nom)}</strong></td>
+            <td data-label="Type"><span class="badge ${c.type === 'epargne' ? 'badge--cagnotte' : 'badge--info'}">${c.type === 'epargne' ? 'Economies' : 'Wish List'}</span></td>
+            <td data-label="Depose" class="amount-cell">
+              <span>${formatMontant(dep)}${depCeMois > 0 && !c.achete ? `<br><small class="muted">+${formatMontant(depCeMois)} (${formatMoisLabel(selectedMonth)})</small>` : ''}</span>
             </td>
-            <td class="amount-cell">${obj > 0 ? formatMontant(obj) : 'Libre'}</td>
-            <td class="no-strike">${progHTML}</td>
-            <td class="actions-cell">
+            <td data-label="Objectif" class="amount-cell">${obj > 0 ? formatMontant(obj) : 'Libre'}</td>
+            <td data-label="Progression" class="no-strike">${progHTML}</td>
+            <td data-label="Actions" class="actions-cell">
               ${!c.achete ? `<button class="btn btn--sm btn--ok" onclick="mouvementCagnotte('${c._firebaseKey}', 1)">+ Deposer</button>` : ''}
               ${!c.achete && dep > 0 ? `<button class="btn btn--sm" title="Retirer" onclick="mouvementCagnotte('${c._firebaseKey}', -1)">-</button>` : ''}
               ${!c.achete && c.type === 'wishlist' ? `<button class="btn btn--sm btn--primary" onclick="acheterCagnotte('${c._firebaseKey}')">Acheter</button>` : ''}
@@ -1238,7 +1425,7 @@
     function renderPrets() {
       const tbody = document.getElementById('tablePrets');
       if (prets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
       } else {
         tbody.innerHTML = prets.map(p => {
           const total = toNum(p.montantTotal);
@@ -1247,12 +1434,12 @@
           const pct = total > 0 ? Math.round((remb / total) * 100) : 0;
           return `
           <tr>
-            <td>${escapeHTML(p.motif)}</td>
-            <td class="amount-cell">${formatMontant(total)}</td>
-            <td class="amount-cell">${formatMontant(remb)} <button class="btn btn--sm" onclick="modifierRemboursementPret('${p._firebaseKey}')">✎</button></td>
-            <td class="amount-cell">${formatMontant(rest)}</td>
-            <td><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" style="width:${pct}%;"></div></div><span class="progress-text">${pct}%</span></div></td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerPret('${p._firebaseKey}')">×</button></td>
+            <td data-label="Motif"><strong>${escapeHTML(p.motif)}</strong></td>
+            <td data-label="Total" class="amount-cell">${formatMontant(total)}</td>
+            <td data-label="Rembourse" class="amount-cell"><span>${formatMontant(remb)} <button class="btn btn--sm" onclick="modifierRemboursementPret('${p._firebaseKey}')">✎</button></span></td>
+            <td data-label="Restant" class="amount-cell">${formatMontant(rest)}</td>
+            <td data-label="Progression"><div class="progress-bar-wrap"><div class="progress-bar"><div class="progress-bar__fill" style="width:${pct}%;"></div></div><span class="progress-text">${pct}%</span></div></td>
+            <td data-label="Action" class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerPret('${p._firebaseKey}')">×</button></td>
           </tr>`;
         }).join('');
       }
@@ -1303,7 +1490,7 @@
       const opts = baseCats.map(c => `<option value="${escapeAttr(c)}" ${c === r.categorie ? 'selected' : ''}>${escapeHTML(c)}</option>`).join('');
       ouvrirModal('Modifier ce revenu', `
         <div class="form-group"><label>Description</label><input type="text" class="input" id="editRevDesc" value="${escapeAttr(r.description)}" /></div>
-        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editRevMontant" step="any" min="0" value="${toNum(r.montant)}" /></div>
+        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editRevMontant" step="any" min="0" inputmode="decimal" value="${toNum(r.montant)}" /></div>
         <div class="form-group"><label>Categorie</label><select class="select" id="editRevCat">${opts}</select></div>
         <div class="form-group"><label>Date</label><input type="date" class="input" id="editRevDate" value="${escapeAttr(r.date || defaultDateForMonth())}" /></div>
       `, async () => {
@@ -1377,8 +1564,8 @@
       const montantCourant = linked ? toNum(linked.montant) : toNum(f.montant);
       ouvrirModal('Modifier la charge fixe', `
         <div class="form-group"><label>Nom</label><input type="text" class="input" id="editFixeNom" value="${escapeAttr(f.nom)}" /></div>
-        <div class="form-group"><label>Montant mensuel (€)</label><input type="number" class="input" id="editFixeMontant" step="any" min="0" value="${montantCourant}" /></div>
-        <div class="form-group"><label>Jour prelevement (1-31)</label><input type="number" class="input" id="editFixeJour" min="1" max="31" value="${escapeAttr(f.jour || '')}" /></div>
+        <div class="form-group"><label>Montant mensuel (€)</label><input type="number" class="input" id="editFixeMontant" step="any" min="0" inputmode="decimal" value="${montantCourant}" /></div>
+        <div class="form-group"><label>Jour prelevement (1-31)</label><input type="number" class="input" id="editFixeJour" min="1" max="31" inputmode="numeric" value="${escapeAttr(f.jour || '')}" /></div>
         ${linked ? `<p class="muted">Deja cochee payee pour ${formatMoisLabel(selectedMonth)} : la depense associee sera aussi mise a jour.</p>` : ''}
       `, async () => {
         const nom = document.getElementById('editFixeNom').value.trim();
@@ -1485,7 +1672,7 @@
       const b = getBucketDepense(d);
       ouvrirModal('Modifier cette depense', `
         <div class="form-group"><label>Description</label><input type="text" class="input" id="editDepDesc" value="${escapeAttr(d.description)}" /></div>
-        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editDepMontant" step="any" min="0.01" value="${toNum(d.montant)}" /></div>
+        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editDepMontant" step="any" min="0.01" inputmode="decimal" value="${toNum(d.montant)}" /></div>
         <div class="form-group">
           <label>Affectation</label>
           <select class="select" id="editDepBucket">
@@ -1692,9 +1879,9 @@
             <option value="epargne" ${c.type === 'epargne' ? 'selected' : ''}>Economies / Livret A</option>
           </select>
         </div>
-        <div class="form-group"><label>Objectif (€, 0 = libre)</label><input type="number" class="input" id="editCagObj" step="any" min="0" value="${toNum(c.objectif)}" /></div>
-        <div class="form-group"><label>Total depose cumule (€)</label><input type="number" class="input" id="editCagDep" step="any" min="0" value="${toNum(c.montantDepose)}" /></div>
-        <div class="form-group"><label>Dont depose en ${formatMoisLabel(selectedMonth)} (€)</label><input type="number" class="input" id="editCagDepMois" step="any" min="0" value="${depMois}" /></div>
+        <div class="form-group"><label>Objectif (€, 0 = libre)</label><input type="number" class="input" id="editCagObj" step="any" min="0" inputmode="decimal" value="${toNum(c.objectif)}" /></div>
+        <div class="form-group"><label>Total depose cumule (€)</label><input type="number" class="input" id="editCagDep" step="any" min="0" inputmode="decimal" value="${toNum(c.montantDepose)}" /></div>
+        <div class="form-group"><label>Dont depose en ${formatMoisLabel(selectedMonth)} (€)</label><input type="number" class="input" id="editCagDepMois" step="any" min="0" inputmode="decimal" value="${depMois}" /></div>
       `, async () => {
         const nom = document.getElementById('editCagNom').value.trim();
         const type = document.getElementById('editCagType').value;
@@ -1762,6 +1949,8 @@
       document.body.setAttribute('data-theme', currentTheme);
       document.getElementById('themeIcon').textContent = currentTheme === 'dark' ? '☽' : '☀';
       document.getElementById('themeLabel').textContent = currentTheme === 'dark' ? 'Sombre' : 'Clair';
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', currentTheme === 'dark' ? '#0a0a0a' : '#f5f5f0');
     }
     window.toggleTheme = async () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -1773,7 +1962,9 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
       const cap = name.charAt(0).toUpperCase() + name.slice(1);
       document.getElementById('panel' + cap).classList.add('tab-panel--active');
-      document.getElementById('tabBtn' + cap).classList.add('tab-btn--active');
+      const activeBtn = document.getElementById('tabBtn' + cap);
+      activeBtn.classList.add('tab-btn--active');
+      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       updateAll();
     };
 
