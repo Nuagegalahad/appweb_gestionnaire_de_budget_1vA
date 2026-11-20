@@ -112,6 +112,8 @@
     .btn--danger:hover { background:#ff3333; color:#fff; border-color:#ff3333; }
     .btn--ok { border-color:var(--color-revenu); color:var(--color-revenu); }
     .btn--ok:hover { background:var(--color-revenu); color:#fff; border-color:var(--color-revenu); }
+    .btn--info { border-color:var(--color-libre); color:var(--color-libre); }
+    .btn--info:hover { background:var(--color-libre); color:#fff; border-color:var(--color-libre); }
     .btn--primary { background:var(--text); color:var(--bg); font-weight:900; }
     .btn--primary:hover { background:var(--bg); color:var(--text); border-color:var(--text); }
     .theme-toggle {
@@ -226,8 +228,6 @@
     .split-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
     @media (max-width: 920px) { .split-grid { grid-template-columns:1fr; } }
     .divider { border:none; border-top:3px dashed var(--border-light); margin:1.5rem 0; }
-    details.archive-box { margin-top:1.2rem; border:2px solid var(--border-light); padding:0.75rem; background:var(--surface); }
-    details.archive-box summary { cursor:pointer; font-family:var(--font-mono); font-size:0.76rem; text-transform:uppercase; font-weight:700; }
     .empty-state { display:block; text-align:center; padding:1.6rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.82rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
@@ -431,12 +431,12 @@
         <div class="section-box">
           <div class="section-title">
             <span>1. Vivres, Hygiene &amp; Menage</span>
-            <button class="btn btn--sm" onclick="modifierPlafond('vivres')">✎ Plafond</button>
+            <button class="btn btn--sm" onclick="modifierPlafond('vivres')">✎ Plafond (<span class="lbl-mois">mois</span>)</button>
           </div>
           <div style="margin-bottom:0.75rem;">
             <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;gap:0.5rem;flex-wrap:wrap;">
-              <span>Depense : <strong id="vivresDepense">0,00 €</strong> / <strong id="vivresPlafond">150,00 €</strong></span>
-              <span id="vivresResteBadge" class="badge badge--ok">Reste 150,00 €</span>
+              <span>Depense : <strong id="vivresDepense">0,00 €</strong> / <strong id="vivresPlafond">0,00 €</strong></span>
+              <span id="vivresResteBadge" class="badge badge--info">A definir</span>
             </div>
             <div class="progress-bar-wrap">
               <div class="progress-bar"><div class="progress-bar__fill progress-bar__fill--ok" id="vivresBar" style="width:0%;"></div></div>
@@ -461,12 +461,12 @@
         <div class="section-box">
           <div class="section-title">
             <span>2. Sorties &amp; Imprevus</span>
-            <button class="btn btn--sm" onclick="modifierPlafond('sorties')">✎ Plafond</button>
+            <button class="btn btn--sm" onclick="modifierPlafond('sorties')">✎ Plafond (<span class="lbl-mois">mois</span>)</button>
           </div>
           <div style="margin-bottom:0.75rem;">
             <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;gap:0.5rem;flex-wrap:wrap;">
-              <span>Depense : <strong id="sortiesDepense">0,00 €</strong> / <strong id="sortiesPlafond">80,00 €</strong></span>
-              <span id="sortiesResteBadge" class="badge badge--ok">Reste 80,00 €</span>
+              <span>Depense : <strong id="sortiesDepense">0,00 €</strong> / <strong id="sortiesPlafond">0,00 €</strong></span>
+              <span id="sortiesResteBadge" class="badge badge--info">A definir</span>
             </div>
             <div class="progress-bar-wrap">
               <div class="progress-bar"><div class="progress-bar__fill progress-bar__fill--ok" id="sortiesBar" style="width:0%;"></div></div>
@@ -570,17 +570,6 @@
           </div>
         </div>
       </div>
-
-      <!-- TIROIR HISTORIQUE GLOBAL DES DEPENSES -->
-      <details class="archive-box">
-        <summary>Voir tout l'historique des depenses enregistrees (<span id="countAllDep">0</span>)</summary>
-        <div class="table-wrapper" style="margin-top:0.8rem;margin-bottom:0;">
-          <table>
-            <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
-            <tbody id="tableAllDepenses"></tbody>
-          </table>
-        </div>
-      </details>
     </section>
 
     <!-- ONGLET 4 : CAGNOTTES -->
@@ -661,6 +650,8 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
+    const HORS_SOLDE_VAL = '__HORS_SOLDE__';
+
     // Etat
     let revenus = [];
     let depenses = [];
@@ -669,7 +660,7 @@
     let inventaire = [];
     let courses = [];
     let prets = [];
-    let plafonds = { vivres: 150, sorties: 80 };
+    let plafondsParMois = {};
     let currentTheme = 'dark';
     let selectedMonth = moisActuel();
     let user = null;
@@ -684,7 +675,7 @@
     const refInventaire = db.ref('inventaire');
     const refCourses = db.ref('courses');
     const refPrets = db.ref('prets');
-    const refPlafonds = db.ref('config/plafonds');
+    const refPlafondsParMois = db.ref('config/plafondsParMois');
     const refTheme = db.ref('config/theme');
 
     // Utilitaires robustes
@@ -788,6 +779,13 @@
       return 'Autre';
     }
 
+    // Plafonds mensuels (repartent a 0 chaque nouveau mois)
+    function getPlafondMois(bucket, ym) {
+      const m = plafondsParMois && plafondsParMois[ym];
+      if (!m || m[bucket] == null) return 0;
+      return round2(toNum(m[bucket]));
+    }
+
     // Calculs mensuels (repartent a 0 chaque mois) & globaux (Wish List + Dettes)
     function getRevenusMoisList(ym) { return revenus.filter(r => estDansMois(r.date, ym)); }
     function getDepensesMoisList(ym) { return depenses.filter(d => estDansMois(d.date, ym)); }
@@ -811,13 +809,16 @@
     function getRestantAFinancerWishList() {
       return round2(cagnottes.filter(c => !c.achete && c.type === 'wishlist').reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
     }
-    function getLinkedDepenseForFixe(f, ym) {
-      const depKey = f.paiements && f.paiements[ym];
-      if (!depKey) return null;
-      return depenses.find(d => d._firebaseKey === depKey) || null;
-    }
     function isFixePaye(f, ym) {
       return !!(f.paiements && f.paiements[ym]);
+    }
+    function isFixeHorsSolde(f, ym) {
+      return !!(f.paiements && f.paiements[ym] === HORS_SOLDE_VAL);
+    }
+    function getLinkedDepenseForFixe(f, ym) {
+      const depKey = f.paiements && f.paiements[ym];
+      if (!depKey || depKey === HORS_SOLDE_VAL) return null;
+      return depenses.find(d => d._firebaseKey === depKey) || null;
     }
     function getMontantFixePayeMois(f, ym) {
       const linked = getLinkedDepenseForFixe(f, ym);
@@ -833,13 +834,12 @@
       return round2(getSoldeMois(ym) - getFixesRestantsMois(ym) - getTotalDepotsCagnottesMois(ym));
     }
     function getResteLibreSiToutWishAchete(ym) {
-      // Uniquement ce qu'il reste a financer sur la Wish List (sans double comptage des depots deja faits)
       return round2(getResteLibreMois(ym) - getRestantAFinancerWishList());
     }
 
     // Auth
     function stopRealtimeListeners() {
-      [refRevenus, refDepenses, refFixes, refCagnottes, refInventaire, refCourses, refPrets, refPlafonds, refTheme].forEach(r => r.off());
+      [refRevenus, refDepenses, refFixes, refCagnottes, refInventaire, refCourses, refPrets, refPlafondsParMois, refTheme].forEach(r => r.off());
       listenersStarted = false;
     }
 
@@ -857,7 +857,7 @@
         stopRealtimeListeners();
         loginScreen.classList.remove('login-screen--hidden');
         appContent.classList.remove('app-container--visible');
-        revenus = []; depenses = []; depensesFixes = []; cagnottes = []; inventaire = []; courses = []; prets = [];
+        revenus = []; depenses = []; depensesFixes = []; cagnottes = []; inventaire = []; courses = []; prets = []; plafondsParMois = {};
         updateAll();
       }
     }
@@ -901,16 +901,7 @@
       refInventaire.on('value', s => { inventaire = mapSnap(s); updateAll(); }, onReadErr);
       refCourses.on('value', s => { courses = mapSnap(s); updateAll(); }, onReadErr);
       refPrets.on('value', s => { prets = mapSnap(s); updateAll(); }, onReadErr);
-      refPlafonds.on('value', s => {
-        const v = s.val();
-        if (v) {
-          plafonds = {
-            vivres: v.vivres != null ? toNum(v.vivres) : 150,
-            sorties: v.sorties != null ? toNum(v.sorties) : 80
-          };
-        }
-        updateAll();
-      }, onReadErr);
+      refPlafondsParMois.on('value', s => { plafondsParMois = s.val() || {}; updateAll(); }, onReadErr);
       refTheme.on('value', s => {
         const v = s.val();
         if (v) { currentTheme = v; applyTheme(); }
@@ -940,7 +931,11 @@
       const totWish = getTotalWishListActif();
       const resteSiWish = getResteLibreSiToutWishAchete(selectedMonth);
 
-      const depFixesPayees = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0));
+      const depFixesSurSolde = round2(
+        depensesFixes
+          .filter(f => isFixePaye(f, selectedMonth) && !isFixeHorsSolde(f, selectedMonth))
+          .reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0)
+      );
       const depPlafondsMois = round2(
         getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0) +
         getDepensesBucketMois('sorties', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0)
@@ -970,7 +965,7 @@
 
       document.getElementById('cardDepensesMois').textContent = formatMontant(depMois);
       document.getElementById('cardDepensesSub').textContent =
-        'Fixes : ' + formatMontant(depFixesPayees) + ' | Plafonds : ' + formatMontant(depPlafondsMois);
+        'Fixes : ' + formatMontant(depFixesSurSolde) + ' | Plafonds : ' + formatMontant(depPlafondsMois);
 
       document.getElementById('cardDettes').textContent = formatMontant(Math.max(0, totPret - totRemb));
     }
@@ -1008,7 +1003,7 @@
       }).join('');
     }
 
-    // 2. Rendu Depenses Fixes
+    // 2. Rendu Depenses Fixes (avec Option A : Paye normal OU Hors solde)
     function renderFixes() {
       const paye = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0));
       const restant = getFixesRestantsMois(selectedMonth);
@@ -1028,19 +1023,24 @@
       const sorted = [...depensesFixes].sort((a, b) => (parseInt(a.jour, 10) || 99) - (parseInt(b.jour, 10) || 99) || String(a.nom || '').localeCompare(String(b.nom || '')));
       tbody.innerHTML = sorted.map(f => {
         const checked = isFixePaye(f, selectedMonth);
+        const horsSolde = isFixeHorsSolde(f, selectedMonth);
         const montantAffiche = checked ? getMontantFixePayeMois(f, selectedMonth) : toNum(f.montant);
+        const badgeHtml = horsSolde
+          ? '<span class="badge badge--info">Hors solde</span>'
+          : (checked ? '<span class="badge badge--ok">Paye</span>' : '<span class="badge badge--warn">A payer</span>');
         return `
           <tr class="${checked ? 'row-done' : ''}">
             <td class="no-strike">
               <label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;">
                 <input type="checkbox" class="check-box" ${checked ? 'checked' : ''} onchange="basculerPayeFixe('${f._firebaseKey}', this.checked)" />
-                <span class="badge ${checked ? 'badge--ok' : 'badge--warn'}">${checked ? 'Paye' : 'A payer'}</span>
+                ${badgeHtml}
               </label>
             </td>
             <td><strong>${escapeHTML(f.nom)}</strong></td>
             <td>${f.jour ? 'Le ' + escapeHTML(f.jour) + ' du mois' : '—'}</td>
             <td class="amount-cell">${formatMontant(montantAffiche)}</td>
             <td class="actions-cell">
+              ${!horsSolde ? `<button class="btn btn--sm btn--info" title="Deja paye : marquer regle sans deduire du solde" onclick="marquerHorsSoldeFixe('${f._firebaseKey}')">Hors solde</button>` : ''}
               <button class="btn btn--sm" title="Modifier" onclick="modifierChargeFixe('${f._firebaseKey}')">✎</button>
               <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerChargeFixe('${f._firebaseKey}')">×</button>
             </td>
@@ -1049,11 +1049,11 @@
       }).join('');
     }
 
-    // 3. Rendu Depenses a plafond + Inventaire + Courses + Historique
+    // 3. Rendu Depenses a plafond + Inventaire + Courses
     function renderPlafondBlock(bucket, prefix) {
       const list = getDepensesBucketMois(bucket, selectedMonth);
       const totalDep = round2(list.reduce((s, d) => s + toNum(d.montant), 0));
-      const max = round2(plafonds[bucket]);
+      const max = getPlafondMois(bucket, selectedMonth);
       const reste = round2(max - totalDep);
       const pctReel = max > 0 ? Math.round((totalDep / max) * 100) : (totalDep > 0 ? 100 : 0);
       const pctBar = Math.min(100, pctReel);
@@ -1067,7 +1067,10 @@
       bar.className = 'progress-bar__fill ' + (reste < 0 ? '' : (pctReel >= 80 ? 'progress-bar__fill--warn' : 'progress-bar__fill--ok'));
 
       const badge = document.getElementById(prefix + 'ResteBadge');
-      if (reste >= 0) {
+      if (max === 0 && totalDep === 0) {
+        badge.textContent = 'A definir';
+        badge.className = 'badge badge--info';
+      } else if (reste >= 0) {
         badge.textContent = 'Reste ' + formatMontant(reste);
         badge.className = 'badge ' + (pctReel >= 80 ? 'badge--warn' : 'badge--ok');
       } else {
@@ -1141,27 +1144,6 @@
           <td><strong>${escapeHTML(c.nom)}</strong>${c.quantite ? ` <small class="muted">(${escapeHTML(c.quantite)})</small>` : ''}</td>
           <td><span class="badge ${c.horizon === 'semaine' ? 'badge--warn' : 'badge--info'}">${c.horizon === 'semaine' ? 'Semaine' : 'Mois'}</span></td>
           <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerCourse('${c._firebaseKey}')">×</button></td>
-        </tr>
-      `).join('');
-    }
-
-    function renderAllDepensesArchive() {
-      document.getElementById('countAllDep').textContent = depenses.length;
-      const tbody = document.getElementById('tableAllDepenses');
-      if (depenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucune depense enregistree.</span></td></tr>';
-        return;
-      }
-      tbody.innerHTML = depenses.map(d => `
-        <tr>
-          <td>${formatDate(d.date)}</td>
-          <td>${escapeHTML(d.description)}</td>
-          <td><span class="badge">${escapeHTML(d.categorie || 'Sans categorie')}</span></td>
-          <td class="amount-cell">${formatMontant(d.montant)}</td>
-          <td class="actions-cell">
-            <button class="btn btn--sm" title="Modifier" onclick="modifierDepense('${d._firebaseKey}')">✎</button>
-            <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerDepense('${d._firebaseKey}')">×</button>
-          </td>
         </tr>
       `).join('');
     }
@@ -1268,7 +1250,7 @@
         updateDashboard, renderRevenus, renderFixes,
         () => renderPlafondBlock('vivres', 'vivres'),
         () => renderPlafondBlock('sorties', 'sorties'),
-        renderInventaire, renderCourses, renderAllDepensesArchive,
+        renderInventaire, renderCourses,
         renderCagnottes, renderPrets
       ];
       fns.forEach(fn => { try { fn(); } catch (e) { console.error('[Render]', e); } });
@@ -1398,12 +1380,12 @@
         });
       } else {
         const depKey = f.paiements && f.paiements[selectedMonth];
-        if (!confirm(`Annuler le paiement de "${f.nom}" pour ${formatMoisLabel(selectedMonth)} ?`)) {
+        if (!confirm(`Remettre "${f.nom}" en "A payer" pour ${formatMoisLabel(selectedMonth)} ?`)) {
           renderFixes();
           return;
         }
         await safeWrite(async () => {
-          if (depKey && typeof depKey === 'string') {
+          if (depKey && typeof depKey === 'string' && depKey !== HORS_SOLDE_VAL) {
             await refDepenses.child(depKey).remove();
           }
           await refFixes.child(key).child('paiements').child(selectedMonth).remove();
@@ -1411,19 +1393,32 @@
       }
     };
 
+    window.marquerHorsSoldeFixe = async (key) => {
+      const f = depensesFixes.find(item => item._firebaseKey === key);
+      if (!f) return;
+      const depKey = f.paiements && f.paiements[selectedMonth];
+      await safeWrite(async () => {
+        if (depKey && typeof depKey === 'string' && depKey !== HORS_SOLDE_VAL) {
+          await refDepenses.child(depKey).remove();
+        }
+        await refFixes.child(key).child('paiements').child(selectedMonth).set(HORS_SOLDE_VAL);
+      });
+    };
+
     window.supprimerChargeFixe = async (key) => {
-      if (!confirm('Supprimer cette charge fixe de la liste ? (Les paiements passes restent dans l\'historique)')) return;
+      if (!confirm('Supprimer cette charge fixe de la liste ?')) return;
       await safeWrite(() => refFixes.child(key).remove());
     };
 
-    // Depenses a plafond & Edition depenses
+    // Depenses a plafond (reinitialises chaque mois) & Edition depenses
     window.modifierPlafond = async (bucket) => {
       const nom = bucket === 'vivres' ? 'Vivres, Hygiene & Menage' : 'Sorties & Imprevus';
-      const s = prompt(`Plafond mensuel pour "${nom}" (€) :`, toNum(plafonds[bucket]).toFixed(2));
+      const actuel = getPlafondMois(bucket, selectedMonth);
+      const s = prompt(`Plafond de ${formatMoisLabel(selectedMonth)} pour "${nom}" (€) :`, actuel.toFixed(2));
       if (s === null) return;
       const val = toNum(s);
       if (val < 0) return alert('Montant invalide.');
-      await safeWrite(() => refPlafonds.child(bucket).set(round2(val)));
+      await safeWrite(() => refPlafondsParMois.child(selectedMonth).child(bucket).set(round2(val)));
     };
 
     window.ajouterDepensePlafond = async (bucket) => {
@@ -1452,9 +1447,6 @@
           <select class="select" id="editDepBucket">
             <option value="vivres" ${b === 'vivres' ? 'selected' : ''}>Vivres, Hygiene &amp; Menage</option>
             <option value="sorties" ${b === 'sorties' ? 'selected' : ''}>Sorties &amp; Imprevus</option>
-            <option value="fixe" ${b === 'fixe' ? 'selected' : ''}>Depenses fixes</option>
-            <option value="cagnotte" ${b === 'cagnotte' ? 'selected' : ''}>Cagnotte / Wish List</option>
-            <option value="autre" ${b === 'autre' ? 'selected' : ''}>Autre</option>
           </select>
         </div>
         <div class="form-group"><label>Date</label><input type="date" class="input" id="editDepDate" value="${escapeAttr(d.date || defaultDateForMonth())}" /></div>
@@ -1541,8 +1533,10 @@
       const coches = courses.filter(c => c.coche);
       if (coches.length === 0) return alert('Cochez d\'abord les articles achetes.');
       const depVivres = round2(getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0));
-      const restePlafond = round2(toNum(plafonds.vivres) - depVivres);
-      const ticket = prompt(`${coches.length} article(s) remis "En stock".\nReste plafond Vivres (${formatMoisLabel(selectedMonth)}) : ${formatMontant(restePlafond)}\n\nMontant du ticket de caisse (€) a ajouter au plafond Vivres ?\n(Laissez vide pour ne pas creer de depense)`);
+      const plafondVivres = getPlafondMois('vivres', selectedMonth);
+      const restePlafond = round2(plafondVivres - depVivres);
+      const infoPlafond = plafondVivres > 0 ? `Reste plafond Vivres (${formatMoisLabel(selectedMonth)}) : ${formatMontant(restePlafond)}` : `Plafond Vivres non defini pour ${formatMoisLabel(selectedMonth)}`;
+      const ticket = prompt(`${coches.length} article(s) remis "En stock".\n${infoPlafond}\n\nMontant du ticket de caisse (€) a ajouter au plafond Vivres ?\n(Laissez vide pour ne pas creer de depense)`);
       if (ticket === null) return;
 
       await safeWrite(async () => {
@@ -1726,7 +1720,7 @@
         inventaire: stripKeys(inventaire),
         courses: stripKeys(courses),
         prets: stripKeys(prets),
-        plafonds,
+        plafondsParMois,
         exportDate: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1764,7 +1758,11 @@
                 for (const item of arr) await ref.push(item);
               }
             }
-            if (data.plafonds) await refPlafonds.set(data.plafonds);
+            if (data.plafondsParMois) {
+              await refPlafondsParMois.set(data.plafondsParMois);
+            } else if (data.plafonds) {
+              await refPlafondsParMois.child(selectedMonth).set(data.plafonds);
+            }
           });
           alert('Donnees importees avec succes !');
         } catch (err) {
@@ -1787,6 +1785,8 @@
         ['Revenus du mois', getTotalRevenusMois(selectedMonth)],
         ['Depenses du mois', getTotalDepensesMois(selectedMonth)],
         ['Fixes restants du mois', getFixesRestantsMois(selectedMonth)],
+        ['Plafond Vivres du mois', getPlafondMois('vivres', selectedMonth)],
+        ['Plafond Sorties du mois', getPlafondMois('sorties', selectedMonth)],
         ['Depots cagnottes du mois', getTotalDepotsCagnottesMois(selectedMonth)],
         ['Total Wish List (global)', getTotalWishListActif()],
         ['Reste a financer Wish List (global)', getRestantAFinancerWishList()],
@@ -1796,7 +1796,7 @@
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resume), 'Resume');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(revenus)), 'Revenus');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depensesFixes)), 'Depenses Fixes');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depenses)), 'Historique Depenses');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(depenses)), 'Depenses');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(cagnottes)), 'Cagnottes');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(inventaire)), 'Inventaire');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stripKeys(courses)), 'Courses');
