@@ -72,6 +72,12 @@
     }
     .app-container { max-width:1160px; margin:0 auto; padding:1.5rem 1rem 3rem; display:none; }
     .app-container--visible { display:block; }
+    .error-banner {
+      display:none; margin-bottom:1rem; padding:0.8rem 1rem;
+      background:#3a1212; color:#ffd6d6; border:3px solid #ff4444;
+      font-family:var(--font-mono); font-size:0.78rem;
+    }
+    .error-banner--visible { display:block; }
     .header {
       display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
       gap:1rem; margin-bottom:1.5rem; padding:1.15rem 1.4rem;
@@ -134,7 +140,7 @@
     .card--dette { background:var(--card-dette-bg); border-left-color:var(--color-dette); }
     .card__label { font-family:var(--font-mono); font-size:0.62rem; text-transform:uppercase; letter-spacing:1.6px; color:var(--text-secondary); margin-bottom:0.3rem; }
     .card__amount { font-family:var(--font-mono); font-size:1.55rem; font-weight:700; letter-spacing:-0.8px; }
-    .card__sub { font-family:var(--font-mono); font-size:0.65rem; color:var(--text-secondary); margin-top:0.2rem; }
+    .card__sub { font-family:var(--font-mono); font-size:0.64rem; color:var(--text-secondary); margin-top:0.2rem; }
     .card__amount--negative { color:var(--color-dette); }
     .tabs { display:flex; gap:0; margin-bottom:0; flex-wrap:wrap; }
     .tab-btn {
@@ -190,7 +196,7 @@
       font-family:var(--font-heading); font-size:0.64rem; text-transform:uppercase;
       letter-spacing:1px; border:2px solid var(--border); white-space:nowrap; text-align:left;
     }
-    tbody td { padding:0.52rem 0.65rem; border:2px solid var(--border-light); vertical-align:middle; }
+    tbody td, tfoot td { padding:0.52rem 0.65rem; border:2px solid var(--border-light); vertical-align:middle; }
     tbody tr:hover { background:var(--bg); }
     .row-done { opacity:0.58; }
     .row-done td { text-decoration:line-through; }
@@ -225,19 +231,22 @@
     .empty-state { display:block; text-align:center; padding:1.6rem 1rem; font-family:var(--font-mono); color:var(--text-secondary); font-size:0.82rem; }
     .total-row { background:var(--surface); border-top:3px solid var(--border); font-weight:900; }
     .footer { text-align:center; margin-top:2rem; font-family:var(--font-mono); font-size:0.6rem; letter-spacing:2px; color:var(--text-secondary); text-transform:uppercase; }
-    .login-screen {
+    .login-screen, .modal-overlay {
       display:flex; position:fixed; top:0; left:0; width:100%; height:100%;
       background:var(--bg); justify-content:center; align-items:center; z-index:999; padding:1rem;
     }
+    .modal-overlay { background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:1000; display:none; }
+    .modal-overlay--visible { display:flex; }
     .login-screen--hidden { display:none; }
-    .login-box {
+    .login-box, .modal-box {
       background:var(--surface); border:var(--border-width) solid var(--border);
-      padding:2rem; max-width:400px; width:100%; box-shadow:var(--shadow);
+      padding:1.8rem; max-width:440px; width:100%; box-shadow:var(--shadow);
     }
-    .login-box h2 { font-family:var(--font-heading); text-transform:uppercase; margin-bottom:0.4rem; }
-    .login-box p { font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary); margin-bottom:1.5rem; }
-    .login-box .form-group { margin-bottom:1rem; }
+    .login-box h2, .modal-box h2 { font-family:var(--font-heading); text-transform:uppercase; margin-bottom:0.6rem; font-size:1.15rem; }
+    .login-box p { font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary); margin-bottom:1.4rem; }
+    .login-box .form-group, .modal-box .form-group { margin-bottom:0.9rem; }
     .login-box .btn { width:100%; justify-content:center; }
+    .modal-actions { display:flex; gap:0.6rem; justify-content:flex-end; margin-top:1.2rem; }
     .login-error { color:#ff4444; font-family:var(--font-mono); font-size:0.75rem; margin-top:0.75rem; display:none; }
     .muted { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); }
   </style>
@@ -262,7 +271,21 @@
     </div>
   </div>
 
+  <!-- Fenetre modale universelle d'edition -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <h2 id="editModalTitle">Modifier</h2>
+      <div id="editModalBody"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="fermerModal()">Annuler</button>
+        <button class="btn btn--primary" id="editModalSaveBtn" onclick="sauvegarderModal()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-container" id="appContent">
+    <div class="error-banner" id="fbErrorBanner"></div>
+
     <header class="header">
       <div class="header__left">
         <h1 class="header__title">Mon Espace Budget</h1>
@@ -288,17 +311,17 @@
       <div class="card card--solde">
         <p class="card__label">Solde reel</p>
         <p class="card__amount" id="cardSolde">0,00 €</p>
-        <p class="card__sub">Compte + Epargne (global)</p>
+        <p class="card__sub">Revenus globaux - Depenses globales</p>
       </div>
       <div class="card card--libre">
         <p class="card__label">Reste libre</p>
         <p class="card__amount" id="cardLibre">0,00 €</p>
-        <p class="card__sub" id="cardLibreSub">Fixes a payer : 0,00 €</p>
+        <p class="card__sub" id="cardLibreSub">Apres cagnottes &amp; fixes a payer</p>
       </div>
       <div class="card card--cagnotte">
         <p class="card__label">Total Cagnottes</p>
         <p class="card__amount" id="cardCagnottes">0,00 €</p>
-        <p class="card__sub">Wish list + Livret A</p>
+        <p class="card__sub">Wish list + Livret A (actives)</p>
       </div>
       <div class="card card--revenu">
         <p class="card__label">Revenus (<span class="lbl-mois">mois</span>)</p>
@@ -317,7 +340,7 @@
       </div>
     </section>
 
-    <!-- 5 ONGLETS SUR MESURE -->
+    <!-- 5 ONGLETS -->
     <div class="tabs">
       <button class="tab-btn tab-btn--active" onclick="switchTab('revenus')" id="tabBtnRevenus">1. Revenus</button>
       <button class="tab-btn" onclick="switchTab('fixes')" id="tabBtnFixes">2. Depenses fixes</button>
@@ -329,14 +352,15 @@
     <!-- ONGLET 1 : REVENUS -->
     <section class="tab-panel tab-panel--active" id="panelRevenus">
       <div class="form-row">
-        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Alternance novembre, APL, Anniversaire..."></div>
-        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group" style="max-width:210px;">
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="revDesc" placeholder="Ex: Solde compte bancaire, Alternance, APL..."></div>
+        <div class="form-group" style="max-width:140px;"><label>Montant (€)</label><input type="number" class="input" id="revMontant" placeholder="0.00" step="any" min="0"></div>
+        <div class="form-group" style="max-width:225px;">
           <label>Categorie</label>
           <select class="select" id="revCategorie">
             <option value="Salaires">Salaires (Alternance / Job)</option>
             <option value="Aides">Aides (APL, Mobili-jeunes...)</option>
             <option value="Cadeaux">Cadeaux</option>
+            <option value="Solde bancaire">Solde bancaire (Reste compte)</option>
           </select>
         </div>
         <div class="form-group" style="max-width:150px;"><label>Date</label><input type="date" class="input" id="revDate"></div>
@@ -352,12 +376,20 @@
           <option value="Salaires">Salaires</option>
           <option value="Aides">Aides</option>
           <option value="Cadeaux">Cadeaux</option>
+          <option value="Solde bancaire">Solde bancaire</option>
         </select>
       </div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead>
+          <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
           <tbody id="tableRevenus"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="3">Total affiche</td>
+              <td class="amount-cell" id="revTotalFiltre">0,00 €</td>
+              <td></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </section>
@@ -372,7 +404,7 @@
       </div>
       <div class="form-row">
         <div class="form-group"><label>Charge fixe mensuelle</label><input type="text" class="input" id="fixeNom" placeholder="Ex: Loyer, Assurance trottinette, Electricite..."></div>
-        <div class="form-group" style="max-width:150px;"><label>Montant / mois (€)</label><input type="number" class="input" id="fixeMontant" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant / mois (€)</label><input type="number" class="input" id="fixeMontant" placeholder="0.00" step="any" min="0"></div>
         <div class="form-group" style="max-width:140px;"><label>Jour prelevement</label><input type="number" class="input" id="fixeJour" placeholder="Ex: 5" min="1" max="31"></div>
         <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterChargeFixe()">Ajouter</button></div>
       </div>
@@ -398,13 +430,13 @@
         <!-- PLAFOND 1 : VIVRES, HYGIENE & MENAGE -->
         <div class="section-box">
           <div class="section-title">
-            <span>1. Vivres, Hygiene & Menage</span>
+            <span>1. Vivres, Hygiene &amp; Menage</span>
             <button class="btn btn--sm" onclick="modifierPlafond('vivres')">✎ Plafond</button>
           </div>
           <div style="margin-bottom:0.75rem;">
-            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;">
-              <span>Depense : <strong id="vivresDepense">0,00 €</strong> / <strong id="vivresPlafond">200,00 €</strong></span>
-              <span id="vivresResteBadge" class="badge badge--ok">Reste 200,00 €</span>
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;gap:0.5rem;flex-wrap:wrap;">
+              <span>Depense : <strong id="vivresDepense">0,00 €</strong> / <strong id="vivresPlafond">150,00 €</strong></span>
+              <span id="vivresResteBadge" class="badge badge--ok">Reste 150,00 €</span>
             </div>
             <div class="progress-bar-wrap">
               <div class="progress-bar"><div class="progress-bar__fill progress-bar__fill--ok" id="vivresBar" style="width:0%;"></div></div>
@@ -413,13 +445,13 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label>Course / Achat</label><input type="text" class="input" id="vivresDesc" placeholder="Ex: Lidl, Lessive..."></div>
-            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="vivresMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="vivresMontant" placeholder="0.00" step="any" min="0.01"></div>
             <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="vivresDate"></div>
             <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('vivres')">+</button></div>
           </div>
           <div class="table-wrapper" style="margin-bottom:0;">
             <table style="min-width:340px;">
-              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">×</th></tr></thead>
+              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
               <tbody id="tableVivres"></tbody>
             </table>
           </div>
@@ -428,11 +460,11 @@
         <!-- PLAFOND 2 : SORTIES & IMPREVUS -->
         <div class="section-box">
           <div class="section-title">
-            <span>2. Sorties & Imprevus</span>
+            <span>2. Sorties &amp; Imprevus</span>
             <button class="btn btn--sm" onclick="modifierPlafond('sorties')">✎ Plafond</button>
           </div>
           <div style="margin-bottom:0.75rem;">
-            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.78rem;margin-bottom:0.35rem;gap:0.5rem;flex-wrap:wrap;">
               <span>Depense : <strong id="sortiesDepense">0,00 €</strong> / <strong id="sortiesPlafond">80,00 €</strong></span>
               <span id="sortiesResteBadge" class="badge badge--ok">Reste 80,00 €</span>
             </div>
@@ -443,13 +475,13 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label>Sortie / Imprevu</label><input type="text" class="input" id="sortiesDesc" placeholder="Ex: Resto amis, Coiffeur..."></div>
-            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="sortiesMontant" placeholder="0.00" step="0.01" min="0.01"></div>
+            <div class="form-group" style="max-width:105px;"><label>Montant (€)</label><input type="number" class="input" id="sortiesMontant" placeholder="0.00" step="any" min="0.01"></div>
             <div class="form-group" style="max-width:135px;"><label>Date</label><input type="date" class="input" id="sortiesDate"></div>
             <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn btn--sm" onclick="ajouterDepensePlafond('sorties')">+</button></div>
           </div>
           <div class="table-wrapper" style="margin-bottom:0;">
             <table style="min-width:340px;">
-              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">×</th></tr></thead>
+              <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
               <tbody id="tableSorties"></tbody>
             </table>
           </div>
@@ -458,7 +490,7 @@
 
       <hr class="divider" />
 
-      <!-- INVENTAIRE & LISTE DE COURSES (INTEGRES AU PLAFOND VIVRES) -->
+      <!-- INVENTAIRE & LISTE DE COURSES -->
       <div class="split-grid">
         <div>
           <div class="section-title">
@@ -472,7 +504,7 @@
               <select class="select" id="invZone">
                 <option value="Frigo">Frigo</option>
                 <option value="Placard">Placard</option>
-                <option value="Hygiene & Menage">Hygiene & Menage</option>
+                <option value="Hygiene & Menage">Hygiene &amp; Menage</option>
               </select>
             </div>
             <div class="form-group" style="max-width:115px;">
@@ -490,7 +522,7 @@
               <option value="">Toutes les zones</option>
               <option value="Frigo">Frigo</option>
               <option value="Placard">Placard</option>
-              <option value="Hygiene & Menage">Hygiene & Menage</option>
+              <option value="Hygiene & Menage">Hygiene &amp; Menage</option>
             </select>
             <select id="filtreInvStatut" class="select" onchange="renderInventaire()">
               <option value="">Tous les etats</option>
@@ -539,19 +571,19 @@
         </div>
       </div>
 
-      <!-- TIROIR HISTORIQUE GLOBAL / ANCIENNES DEPENSES -->
+      <!-- TIROIR HISTORIQUE GLOBAL DES DEPENSES -->
       <details class="archive-box">
         <summary>Voir tout l'historique des depenses enregistrees (<span id="countAllDep">0</span>)</summary>
         <div class="table-wrapper" style="margin-top:0.8rem;margin-bottom:0;">
           <table>
-            <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Action</th></tr></thead>
+            <thead><tr><th>Date</th><th>Description</th><th>Categorie</th><th style="text-align:right">Montant</th><th style="text-align:center">Actions</th></tr></thead>
             <tbody id="tableAllDepenses"></tbody>
           </table>
         </div>
       </details>
     </section>
 
-    <!-- ONGLET 4 : CAGNOTTES (WISH LIST + ECONOMIES / LIVRET A) -->
+    <!-- ONGLET 4 : CAGNOTTES -->
     <section class="tab-panel" id="panelCagnottes">
       <div class="summary-strip">
         <div><strong>Reste libre a repartir :</strong> <span id="cagResteLibre" style="font-weight:900;">0,00 €</span></div>
@@ -567,8 +599,8 @@
             <option value="epargne">Economies / Livret A</option>
           </select>
         </div>
-        <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="0.01" min="0"></div>
-        <div class="form-group" style="max-width:135px;"><label>Deja depose (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="0.01" min="0" value="0"></div>
+        <div class="form-group" style="max-width:140px;"><label>Objectif (€)</label><input type="number" class="input" id="cagObjectif" placeholder="0 = libre" step="any" min="0"></div>
+        <div class="form-group" style="max-width:135px;"><label>Deja depose (€)</label><input type="number" class="input" id="cagInit" placeholder="0.00" step="any" min="0" value="0"></div>
         <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterCagnotte()">Creer</button></div>
       </div>
       <div class="table-wrapper">
@@ -588,12 +620,12 @@
       </div>
     </section>
 
-    <!-- ONGLET 5 : DETTES (INCHANGE) -->
+    <!-- ONGLET 5 : DETTES -->
     <section class="tab-panel" id="panelDettes">
       <div class="form-row">
         <div class="form-group"><label>Motif du pret</label><input type="text" class="input" id="pretMotif" placeholder="Ex: Loyer, Frais scolarite..."></div>
-        <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="0.01" min="0.01"></div>
-        <div class="form-group" style="max-width:150px;"><label>Deja rembourse (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="0.01" min="0" value="0"></div>
+        <div class="form-group" style="max-width:150px;"><label>Montant total (€)</label><input type="number" class="input" id="pretMontant" placeholder="0.00" step="any" min="0.01"></div>
+        <div class="form-group" style="max-width:150px;"><label>Deja rembourse (€)</label><input type="number" class="input" id="pretRembourse" placeholder="0.00" step="any" min="0" value="0"></div>
         <div class="form-group" style="flex:0 0 auto;min-width:auto;"><button class="btn" onclick="ajouterPret()">Ajouter pret</button></div>
       </div>
       <div class="table-wrapper"><table><thead><tr><th>Motif</th><th style="text-align:right">Total</th><th style="text-align:right">Rembourse</th><th style="text-align:right">Restant</th><th>Progression</th><th style="text-align:center">Action</th></tr></thead><tbody id="tablePrets"></tbody></table></div>
@@ -636,13 +668,14 @@
     let inventaire = [];
     let courses = [];
     let prets = [];
-    let plafonds = { vivres: 200, sorties: 80 };
+    let plafonds = { vivres: 150, sorties: 80 };
     let currentTheme = 'dark';
     let selectedMonth = moisActuel();
     let user = null;
     let listenersStarted = false;
+    let modalSaveHandler = null;
 
-    // References Firebase (100% compatibles avec tes donnees V1/V2)
+    // References Firebase
     const refRevenus = db.ref('revenus');
     const refDepenses = db.ref('depenses');
     const refFixes = db.ref('depensesFixes');
@@ -653,17 +686,35 @@
     const refPlafonds = db.ref('config/plafonds');
     const refTheme = db.ref('config/theme');
 
-    // Utilitaires
-    function round2(n) { return Math.round((parseFloat(n) || 0) * 100) / 100; }
+    // Utilitaires robustes
+    function toNum(v) {
+      if (typeof v === 'number') return isFinite(v) ? v : 0;
+      if (typeof v === 'string') {
+        const n = parseFloat(v.replace(/\s/g, '').replace(',', '.'));
+        return isFinite(n) ? n : 0;
+      }
+      return 0;
+    }
+    function round2(n) { return Math.round(toNum(n) * 100) / 100; }
     function formatMontant(m) { return round2(m).toFixed(2).replace('.', ',') + ' €'; }
     function dateAujourdhui() {
       const now = new Date();
       return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
     }
     function moisActuel() { return dateAujourdhui().slice(0, 7); }
+    function defaultDateForMonth() {
+      return selectedMonth === moisActuel() ? dateAujourdhui() : (selectedMonth + '-01');
+    }
+    function syncDateInputsToMonth() {
+      const d = defaultDateForMonth();
+      ['revDate', 'vivresDate', 'sortiesDate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = d;
+      });
+    }
     function formatDate(d) {
       if (!d) return '—';
-      const p = d.split('-');
+      const p = String(d).split('-');
       return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : d;
     }
     function formatMoisLabel(ym) {
@@ -672,14 +723,55 @@
       const noms = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
       return (noms[parseInt(m, 10) - 1] || m) + ' ' + y;
     }
-    function estDansMois(dateStr, ym) { return (dateStr || '').startsWith(ym); }
+    function estDansMois(dateStr, ym) { return String(dateStr || '').startsWith(ym); }
     function escapeHTML(str) {
       const div = document.createElement('div');
       div.textContent = str == null ? '' : String(str);
       return div.innerHTML;
     }
+    function escapeAttr(str) {
+      return escapeHTML(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function showError(msg) {
+      const b = document.getElementById('fbErrorBanner');
+      if (!b) return;
+      b.textContent = 'Erreur synchronisation : ' + msg;
+      b.classList.add('error-banner--visible');
+      console.error('[Firebase]', msg);
+    }
+    function clearError() {
+      const b = document.getElementById('fbErrorBanner');
+      if (b) b.classList.remove('error-banner--visible');
+    }
+    async function safeWrite(fn) {
+      if (!user) return alert('Veuillez vous connecter.');
+      try {
+        clearError();
+        await fn();
+      } catch (err) {
+        showError(err.message || String(err));
+        alert('Erreur enregistrement : ' + (err.message || err));
+      }
+    }
 
-    // Classification intelligente (compatibilite anciennes depenses V1/V2)
+    // Modale universelle
+    function ouvrirModal(title, bodyHtml, onSave) {
+      document.getElementById('editModalTitle').textContent = title;
+      document.getElementById('editModalBody').innerHTML = bodyHtml;
+      modalSaveHandler = onSave;
+      document.getElementById('editModal').classList.add('modal-overlay--visible');
+    }
+    window.fermerModal = () => {
+      document.getElementById('editModal').classList.remove('modal-overlay--visible');
+      modalSaveHandler = null;
+    };
+    window.sauvegarderModal = async () => {
+      if (!modalSaveHandler) return;
+      const ok = await modalSaveHandler();
+      if (ok !== false) window.fermerModal();
+    };
+
+    // Classification depenses
     function getBucketDepense(d) {
       if (d.bucket) return d.bucket;
       const cat = (d.categorie || '').toLowerCase();
@@ -687,23 +779,48 @@
       if (cat.includes('sorti') || cat.includes('imprev') || cat.includes('loisir') || cat.includes('resto') || cat.includes('ami')) return 'sorties';
       return 'autre';
     }
+    function labelCategoriePourBucket(bucket) {
+      if (bucket === 'vivres') return 'Vivres & Consommables';
+      if (bucket === 'sorties') return 'Sorties & Imprevus';
+      if (bucket === 'fixe') return 'Depenses fixes';
+      if (bucket === 'cagnotte') return 'Cagnotte / Wish List';
+      return 'Autre';
+    }
 
     // Calculs financiers
-    function getTotalRevenus() { return round2(revenus.reduce((s, r) => s + (parseFloat(r.montant) || 0), 0)); }
-    function getTotalDepenses() { return round2(depenses.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0)); }
+    function getTotalRevenus() { return round2(revenus.reduce((s, r) => s + toNum(r.montant), 0)); }
+    function getTotalDepenses() { return round2(depenses.reduce((s, d) => s + toNum(d.montant), 0)); }
     function getSoldeReel() { return round2(getTotalRevenus() - getTotalDepenses()); }
     function getTotalCagnottesActives() {
-      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + (parseFloat(c.montantDepose) || 0), 0));
+      return round2(cagnottes.filter(c => !c.achete).reduce((s, c) => s + toNum(c.montantDepose), 0));
     }
-    function isFixePaye(f, ym) { return !!(f.paiements && f.paiements[ym]); }
+    function getLinkedDepenseForFixe(f, ym) {
+      const depKey = f.paiements && f.paiements[ym];
+      if (!depKey) return null;
+      return depenses.find(d => d._firebaseKey === depKey) || null;
+    }
+    function isFixePaye(f, ym) {
+      return !!(f.paiements && f.paiements[ym]);
+    }
+    function getMontantFixePayeMois(f, ym) {
+      const linked = getLinkedDepenseForFixe(f, ym);
+      return linked ? toNum(linked.montant) : toNum(f.montant);
+    }
     function getFixesRestantsMois(ym) {
-      return round2(depensesFixes.filter(f => !isFixePaye(f, ym)).reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
-    }
-    function getResteLibre() {
-      return round2(getSoldeReel() - getTotalCagnottesActives() - getFixesRestantsMois(selectedMonth));
+      return round2(depensesFixes.filter(f => !isFixePaye(f, ym)).reduce((s, f) => s + toNum(f.montant), 0));
     }
     function getDepensesBucketMois(bucket, ym) {
       return depenses.filter(d => getBucketDepense(d) === bucket && estDansMois(d.date, ym));
+    }
+    function getPlafondsRestantsMois(ym) {
+      const depV = getDepensesBucketMois('vivres', ym).reduce((s, d) => s + toNum(d.montant), 0);
+      const depS = getDepensesBucketMois('sorties', ym).reduce((s, d) => s + toNum(d.montant), 0);
+      const restV = Math.max(0, toNum(plafonds.vivres) - depV);
+      const restS = Math.max(0, toNum(plafonds.sorties) - depS);
+      return round2(restV + restS);
+    }
+    function getResteLibre() {
+      return round2(getSoldeReel() - getTotalCagnottesActives() - getFixesRestantsMois(selectedMonth));
     }
 
     // Auth
@@ -760,28 +877,36 @@
       return Object.entries(val).map(([key, item]) => ({ ...item, _firebaseKey: key }));
     }
 
+    function onReadErr(err) { showError(err.message || String(err)); }
+
     function startRealtimeListeners() {
-      refRevenus.on('value', s => { revenus = mapSnap(s).sort((a,b) => (b.date || '').localeCompare(a.date || '')); updateAll(); });
-      refDepenses.on('value', s => { depenses = mapSnap(s).sort((a,b) => (b.date || '').localeCompare(a.date || '')); updateAll(); });
-      refFixes.on('value', s => { depensesFixes = mapSnap(s); updateAll(); });
-      refCagnottes.on('value', s => { cagnottes = mapSnap(s); updateAll(); });
-      refInventaire.on('value', s => { inventaire = mapSnap(s); updateAll(); });
-      refCourses.on('value', s => { courses = mapSnap(s); updateAll(); });
-      refPrets.on('value', s => { prets = mapSnap(s); updateAll(); });
+      refRevenus.on('value', s => { revenus = mapSnap(s).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))); clearError(); updateAll(); }, onReadErr);
+      refDepenses.on('value', s => { depenses = mapSnap(s).sort((a,b) => String(b.date || '').localeCompare(String(a.date || ''))); clearError(); updateAll(); }, onReadErr);
+      refFixes.on('value', s => { depensesFixes = mapSnap(s); updateAll(); }, onReadErr);
+      refCagnottes.on('value', s => { cagnottes = mapSnap(s); updateAll(); }, onReadErr);
+      refInventaire.on('value', s => { inventaire = mapSnap(s); updateAll(); }, onReadErr);
+      refCourses.on('value', s => { courses = mapSnap(s); updateAll(); }, onReadErr);
+      refPrets.on('value', s => { prets = mapSnap(s); updateAll(); }, onReadErr);
       refPlafonds.on('value', s => {
         const v = s.val();
-        if (v) plafonds = { vivres: parseFloat(v.vivres) || 200, sorties: parseFloat(v.sorties) || 80 };
+        if (v) {
+          plafonds = {
+            vivres: v.vivres != null ? toNum(v.vivres) : 150,
+            sorties: v.sorties != null ? toNum(v.sorties) : 80
+          };
+        }
         updateAll();
-      });
+      }, onReadErr);
       refTheme.on('value', s => {
         const v = s.val();
         if (v) { currentTheme = v; applyTheme(); }
-      });
+      }, onReadErr);
     }
 
     window.changerMois = (ym) => {
       if (!ym) return;
       selectedMonth = ym;
+      syncDateInputsToMonth();
       updateAll();
     };
 
@@ -795,13 +920,14 @@
       const solde = getSoldeReel();
       const totCag = getTotalCagnottesActives();
       const fixesRest = getFixesRestantsMois(selectedMonth);
+      const plafRest = getPlafondsRestantsMois(selectedMonth);
       const libre = getResteLibre();
 
-      const revMois = round2(revenus.filter(r => estDansMois(r.date, selectedMonth)).reduce((s, r) => s + (parseFloat(r.montant) || 0), 0));
-      const depMois = round2(depenses.filter(d => estDansMois(d.date, selectedMonth)).reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
+      const revMois = round2(revenus.filter(r => estDansMois(r.date, selectedMonth)).reduce((s, r) => s + toNum(r.montant), 0));
+      const depMois = round2(depenses.filter(d => estDansMois(d.date, selectedMonth)).reduce((s, d) => s + toNum(d.montant), 0));
 
-      const totPret = prets.reduce((s, p) => s + (parseFloat(p.montantTotal) || 0), 0);
-      const totRemb = prets.reduce((s, p) => s + (parseFloat(p.montantRembourse) || 0), 0);
+      const totPret = prets.reduce((s, p) => s + toNum(p.montantTotal), 0);
+      const totRemb = prets.reduce((s, p) => s + toNum(p.montantRembourse), 0);
 
       const soldeEl = document.getElementById('cardSolde');
       soldeEl.textContent = formatMontant(solde);
@@ -810,7 +936,8 @@
       const libreEl = document.getElementById('cardLibre');
       libreEl.textContent = formatMontant(libre);
       libreEl.classList.toggle('card__amount--negative', libre < 0);
-      document.getElementById('cardLibreSub').textContent = 'Fixes a payer (' + labelMois + ') : ' + formatMontant(fixesRest);
+      document.getElementById('cardLibreSub').textContent =
+        'Fixes a payer : ' + formatMontant(fixesRest) + ' | Plafonds rest. : ' + formatMontant(plafRest);
 
       document.getElementById('cardCagnottes').textContent = formatMontant(totCag);
       document.getElementById('cardRevenusMois').textContent = formatMontant(revMois);
@@ -828,27 +955,36 @@
       if (periode === 'mois') list = list.filter(r => estDansMois(r.date, selectedMonth));
       if (cat) list = list.filter(r => (r.categorie || '') === cat);
 
+      const totalFiltre = round2(list.reduce((s, r) => s + toNum(r.montant), 0));
+      document.getElementById('revTotalFiltre').textContent = formatMontant(totalFiltre);
+
       const tbody = document.getElementById('tableRevenus');
       if (list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5"><span class="empty-state">Aucun revenu sur cette selection.</span></td></tr>';
         return;
       }
-      tbody.innerHTML = list.map(r => `
-        <tr>
-          <td>${formatDate(r.date)}</td>
-          <td>${escapeHTML(r.description)}</td>
-          <td><span class="badge badge--ok">${escapeHTML(r.categorie || 'Autre')}</span></td>
-          <td class="amount-cell">${formatMontant(r.montant)}</td>
-          <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerRevenu('${r._firebaseKey}')">×</button></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = list.map(r => {
+        const badgeCls = r.categorie === 'Solde bancaire' ? 'badge--info' : 'badge--ok';
+        return `
+          <tr>
+            <td>${formatDate(r.date)}</td>
+            <td>${escapeHTML(r.description)}</td>
+            <td><span class="badge ${badgeCls}">${escapeHTML(r.categorie || 'Autre')}</span></td>
+            <td class="amount-cell">${formatMontant(r.montant)}</td>
+            <td class="actions-cell">
+              <button class="btn btn--sm" title="Modifier" onclick="modifierRevenu('${r._firebaseKey}')">✎</button>
+              <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerRevenu('${r._firebaseKey}')">×</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     // 2. Rendu Depenses Fixes
     function renderFixes() {
-      const total = round2(depensesFixes.reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
-      const paye = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + (parseFloat(f.montant) || 0), 0));
-      const restant = round2(total - paye);
+      const paye = round2(depensesFixes.filter(f => isFixePaye(f, selectedMonth)).reduce((s, f) => s + getMontantFixePayeMois(f, selectedMonth), 0));
+      const restant = getFixesRestantsMois(selectedMonth);
+      const total = round2(paye + restant);
 
       document.getElementById('fixeTotalMois').textContent = formatMontant(total);
       document.getElementById('fixePayeMois').textContent = formatMontant(paye);
@@ -861,9 +997,10 @@
         return;
       }
 
-      const sorted = [...depensesFixes].sort((a, b) => (parseInt(a.jour) || 99) - (parseInt(b.jour) || 99) || (a.nom || '').localeCompare(b.nom || ''));
+      const sorted = [...depensesFixes].sort((a, b) => (parseInt(a.jour, 10) || 99) - (parseInt(b.jour, 10) || 99) || String(a.nom || '').localeCompare(String(b.nom || '')));
       tbody.innerHTML = sorted.map(f => {
         const checked = isFixePaye(f, selectedMonth);
+        const montantAffiche = checked ? getMontantFixePayeMois(f, selectedMonth) : toNum(f.montant);
         return `
           <tr class="${checked ? 'row-done' : ''}">
             <td class="no-strike">
@@ -874,10 +1011,10 @@
             </td>
             <td><strong>${escapeHTML(f.nom)}</strong></td>
             <td>${f.jour ? 'Le ' + escapeHTML(f.jour) + ' du mois' : '—'}</td>
-            <td class="amount-cell">${formatMontant(f.montant)}</td>
+            <td class="amount-cell">${formatMontant(montantAffiche)}</td>
             <td class="actions-cell">
-              <button class="btn btn--sm" title="Modifier montant" onclick="modifierChargeFixe('${f._firebaseKey}')">✎</button>
-              <button class="btn btn--sm btn--danger" onclick="supprimerChargeFixe('${f._firebaseKey}')">×</button>
+              <button class="btn btn--sm" title="Modifier" onclick="modifierChargeFixe('${f._firebaseKey}')">✎</button>
+              <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerChargeFixe('${f._firebaseKey}')">×</button>
             </td>
           </tr>
         `;
@@ -887,23 +1024,24 @@
     // 3. Rendu Depenses a plafond + Inventaire + Courses + Historique
     function renderPlafondBlock(bucket, prefix) {
       const list = getDepensesBucketMois(bucket, selectedMonth);
-      const totalDep = round2(list.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
-      const max = round2(plafonds[bucket] || 0);
+      const totalDep = round2(list.reduce((s, d) => s + toNum(d.montant), 0));
+      const max = round2(plafonds[bucket]);
       const reste = round2(max - totalDep);
-      const pct = max > 0 ? Math.min(100, Math.round((totalDep / max) * 100)) : (totalDep > 0 ? 100 : 0);
+      const pctReel = max > 0 ? Math.round((totalDep / max) * 100) : (totalDep > 0 ? 100 : 0);
+      const pctBar = Math.min(100, pctReel);
 
       document.getElementById(prefix + 'Depense').textContent = formatMontant(totalDep);
       document.getElementById(prefix + 'Plafond').textContent = formatMontant(max);
-      document.getElementById(prefix + 'Pct').textContent = (max > 0 ? Math.round((totalDep / max) * 100) : 0) + '%';
+      document.getElementById(prefix + 'Pct').textContent = pctReel + '%';
 
       const bar = document.getElementById(prefix + 'Bar');
-      bar.style.width = pct + '%';
-      bar.className = 'progress-bar__fill ' + (reste < 0 ? '' : (pct >= 80 ? 'progress-bar__fill--warn' : 'progress-bar__fill--ok'));
+      bar.style.width = pctBar + '%';
+      bar.className = 'progress-bar__fill ' + (reste < 0 ? '' : (pctReel >= 80 ? 'progress-bar__fill--warn' : 'progress-bar__fill--ok'));
 
       const badge = document.getElementById(prefix + 'ResteBadge');
       if (reste >= 0) {
         badge.textContent = 'Reste ' + formatMontant(reste);
-        badge.className = 'badge ' + (pct >= 80 ? 'badge--warn' : 'badge--ok');
+        badge.className = 'badge ' + (pctReel >= 80 ? 'badge--warn' : 'badge--ok');
       } else {
         badge.textContent = 'Depasse de ' + formatMontant(Math.abs(reste));
         badge.className = 'badge badge--danger';
@@ -918,7 +1056,10 @@
             <td>${formatDate(d.date)}</td>
             <td>${escapeHTML(d.description)}</td>
             <td class="amount-cell">${formatMontant(d.montant)}</td>
-            <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
+            <td class="actions-cell">
+              <button class="btn btn--sm" title="Modifier" onclick="modifierDepense('${d._firebaseKey}')">✎</button>
+              <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerDepense('${d._firebaseKey}')">×</button>
+            </td>
           </tr>
         `).join('');
       }
@@ -933,7 +1074,7 @@
       else if (fStatut === 'ok') items = items.filter(i => i.statut === 'ok');
 
       const order = { epuise: 1, bas: 2, ok: 3 };
-      items.sort((a,b) => (order[a.statut] || 3) - (order[b.statut] || 3) || (a.nom || '').localeCompare(b.nom || ''));
+      items.sort((a,b) => (order[a.statut] || 3) - (order[b.statut] || 3) || String(a.nom || '').localeCompare(String(b.nom || '')));
 
       const tbody = document.getElementById('tableInventaire');
       if (items.length === 0) {
@@ -959,7 +1100,7 @@
       const fHorizon = document.getElementById('filtreCourseHorizon').value;
       let items = [...courses];
       if (fHorizon) items = items.filter(c => c.horizon === fHorizon);
-      items.sort((a,b) => (!!a.coche === !!b.coche ? (a.horizon || '').localeCompare(b.horizon || '') : (a.coche ? 1 : -1)));
+      items.sort((a,b) => (!!a.coche === !!b.coche ? String(a.horizon || '').localeCompare(String(b.horizon || '')) : (a.coche ? 1 : -1)));
 
       const tbody = document.getElementById('tableCourses');
       if (items.length === 0) {
@@ -989,7 +1130,10 @@
           <td>${escapeHTML(d.description)}</td>
           <td><span class="badge">${escapeHTML(d.categorie || 'Sans categorie')}</span></td>
           <td class="amount-cell">${formatMontant(d.montant)}</td>
-          <td class="actions-cell"><button class="btn btn--sm btn--danger" onclick="supprimerDepense('${d._firebaseKey}')">×</button></td>
+          <td class="actions-cell">
+            <button class="btn btn--sm" title="Modifier" onclick="modifierDepense('${d._firebaseKey}')">✎</button>
+            <button class="btn btn--sm btn--danger" title="Supprimer" onclick="supprimerDepense('${d._firebaseKey}')">×</button>
+          </td>
         </tr>
       `).join('');
     }
@@ -999,7 +1143,7 @@
       const libre = getResteLibre();
       const actives = cagnottes.filter(c => !c.achete);
       const totDepose = getTotalCagnottesActives();
-      const restantWish = round2(actives.filter(c => c.type === 'wishlist' && c.objectif > 0).reduce((s, c) => s + Math.max(0, c.objectif - (parseFloat(c.montantDepose) || 0)), 0));
+      const restantWish = round2(actives.filter(c => c.type === 'wishlist' && toNum(c.objectif) > 0).reduce((s, c) => s + Math.max(0, toNum(c.objectif) - toNum(c.montantDepose)), 0));
 
       const libreEl = document.getElementById('cagResteLibre');
       libreEl.textContent = formatMontant(libre);
@@ -1016,7 +1160,7 @@
       const sorted = [...cagnottes].sort((a, b) => {
         if (!!a.achete !== !!b.achete) return a.achete ? 1 : -1;
         if (a.type !== b.type) return a.type === 'epargne' ? -1 : 1;
-        return (a.nom || '').localeCompare(b.nom || '');
+        return String(a.nom || '').localeCompare(String(b.nom || ''));
       });
 
       tbody.innerHTML = sorted.map(c => {
@@ -1045,7 +1189,7 @@
               ${!c.achete ? `<button class="btn btn--sm btn--ok" onclick="mouvementCagnotte('${c._firebaseKey}', 1)">+ Deposer</button>` : ''}
               ${!c.achete && dep > 0 ? `<button class="btn btn--sm" title="Retirer" onclick="mouvementCagnotte('${c._firebaseKey}', -1)">-</button>` : ''}
               ${!c.achete && c.type === 'wishlist' ? `<button class="btn btn--sm btn--primary" onclick="acheterCagnotte('${c._firebaseKey}')">Acheter</button>` : ''}
-              <button class="btn btn--sm" title="Modifier objectif" onclick="modifierCagnotte('${c._firebaseKey}')">✎</button>
+              <button class="btn btn--sm" title="Modifier" onclick="modifierCagnotte('${c._firebaseKey}')">✎</button>
               <button class="btn btn--sm btn--danger" onclick="supprimerCagnotte('${c._firebaseKey}')">×</button>
             </td>
           </tr>
@@ -1053,15 +1197,15 @@
       }).join('');
     }
 
-    // 5. Rendu Dettes (inchange)
+    // 5. Rendu Dettes
     function renderPrets() {
       const tbody = document.getElementById('tablePrets');
       if (prets.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6"><span class="empty-state">Aucun pret</span></td></tr>';
       } else {
         tbody.innerHTML = prets.map(p => {
-          const total = parseFloat(p.montantTotal) || 0;
-          const remb = parseFloat(p.montantRembourse) || 0;
+          const total = toNum(p.montantTotal);
+          const remb = toNum(p.montantRembourse);
           const rest = Math.max(0, total - remb);
           const pct = total > 0 ? Math.round((remb / total) * 100) : 0;
           return `
@@ -1075,8 +1219,8 @@
           </tr>`;
         }).join('');
       }
-      const totalPret = prets.reduce((s, p) => s + (parseFloat(p.montantTotal) || 0), 0);
-      const totalRemb = prets.reduce((s, p) => s + (parseFloat(p.montantRembourse) || 0), 0);
+      const totalPret = prets.reduce((s, p) => s + toNum(p.montantTotal), 0);
+      const totalRemb = prets.reduce((s, p) => s + toNum(p.montantRembourse), 0);
       const restGlobal = Math.max(0, totalPret - totalRemb);
       const pourcentage = totalPret > 0 ? Math.round((totalRemb / totalPret) * 100) : 0;
       document.getElementById('totalDu').textContent = formatMontant(totalPret);
@@ -1087,75 +1231,113 @@
     }
 
     function updateAll() {
-      updateDashboard();
-      renderRevenus();
-      renderFixes();
-      renderPlafondBlock('vivres', 'vivres');
-      renderPlafondBlock('sorties', 'sorties');
-      renderInventaire();
-      renderCourses();
-      renderAllDepensesArchive();
-      renderCagnottes();
-      renderPrets();
+      const fns = [
+        updateDashboard, renderRevenus, renderFixes,
+        () => renderPlafondBlock('vivres', 'vivres'),
+        () => renderPlafondBlock('sorties', 'sorties'),
+        renderInventaire, renderCourses, renderAllDepensesArchive,
+        renderCagnottes, renderPrets
+      ];
+      fns.forEach(fn => { try { fn(); } catch (e) { console.error('[Render]', e); } });
     }
 
     // === ACTIONS ===
 
-    // Revenus
+    // Revenus (Ajout + Modification complete + Suppression)
     window.ajouterRevenu = async () => {
-      if (!user) return;
       const desc = document.getElementById('revDesc').value.trim();
-      const montant = parseFloat(document.getElementById('revMontant').value);
+      const montant = toNum(document.getElementById('revMontant').value);
       const categorie = document.getElementById('revCategorie').value;
-      const date = document.getElementById('revDate').value || dateAujourdhui();
-      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant > 0 requis.');
-      await refRevenus.push({ description: desc, montant: round2(montant), categorie, date });
-      document.getElementById('revDesc').value = '';
-      document.getElementById('revMontant').value = '';
-      document.getElementById('revDate').value = dateAujourdhui();
-    };
-    window.supprimerRevenu = async (key) => {
-      if (!user || !confirm('Supprimer ce revenu ?')) return;
-      await refRevenus.child(key).remove();
+      const date = document.getElementById('revDate').value || defaultDateForMonth();
+      if (!desc || montant <= 0) return alert('Description et montant > 0 requis.');
+      await safeWrite(async () => {
+        await refRevenus.push({ description: desc, montant: round2(montant), categorie, date });
+        document.getElementById('revDesc').value = '';
+        document.getElementById('revMontant').value = '';
+        document.getElementById('revDate').value = defaultDateForMonth();
+      });
     };
 
-    // Depenses Fixes
+    window.modifierRevenu = (key) => {
+      const r = revenus.find(item => item._firebaseKey === key);
+      if (!r) return;
+      const baseCats = ['Salaires', 'Aides', 'Cadeaux', 'Solde bancaire'];
+      if (r.categorie && !baseCats.includes(r.categorie)) baseCats.push(r.categorie);
+      const opts = baseCats.map(c => `<option value="${escapeAttr(c)}" ${c === r.categorie ? 'selected' : ''}>${escapeHTML(c)}</option>`).join('');
+      ouvrirModal('Modifier ce revenu', `
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="editRevDesc" value="${escapeAttr(r.description)}" /></div>
+        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editRevMontant" step="any" min="0" value="${toNum(r.montant)}" /></div>
+        <div class="form-group"><label>Categorie</label><select class="select" id="editRevCat">${opts}</select></div>
+        <div class="form-group"><label>Date</label><input type="date" class="input" id="editRevDate" value="${escapeAttr(r.date || defaultDateForMonth())}" /></div>
+      `, async () => {
+        const description = document.getElementById('editRevDesc').value.trim();
+        const montant = toNum(document.getElementById('editRevMontant').value);
+        const categorie = document.getElementById('editRevCat').value;
+        const date = document.getElementById('editRevDate').value || defaultDateForMonth();
+        if (!description || montant < 0) { alert('Description et montant >= 0 requis.'); return false; }
+        await safeWrite(() => refRevenus.child(key).update({ description, montant: round2(montant), categorie, date }));
+      });
+    };
+
+    window.supprimerRevenu = async (key) => {
+      if (!confirm('Supprimer ce revenu ?')) return;
+      await safeWrite(() => refRevenus.child(key).remove());
+    };
+
+    // Depenses Fixes (synchronisees avec l'historique des depenses)
     window.preremplirChargesFixes = async () => {
-      if (!user) return;
       const defaults = [
         'Loyer', 'Assurance habitation', 'Assurance trottinette',
         'Frais telephoniques', 'Electricite', 'Remboursement pret bancaire', 'Abonnements'
       ];
-      for (const nom of defaults) {
-        await refFixes.push({ nom, montant: 0, jour: '', paiements: {} });
-      }
+      await safeWrite(async () => {
+        for (const nom of defaults) {
+          await refFixes.push({ nom, montant: 0, jour: '', paiements: {} });
+        }
+      });
     };
 
     window.ajouterChargeFixe = async () => {
-      if (!user) return;
       const nom = document.getElementById('fixeNom').value.trim();
-      const montant = parseFloat(document.getElementById('fixeMontant').value);
+      const montant = toNum(document.getElementById('fixeMontant').value);
       const jour = document.getElementById('fixeJour').value.trim();
-      if (!nom || isNaN(montant) || montant < 0) return alert('Nom et montant >= 0 requis.');
-      await refFixes.push({ nom, montant: round2(montant), jour, paiements: {} });
-      document.getElementById('fixeNom').value = '';
-      document.getElementById('fixeMontant').value = '';
-      document.getElementById('fixeJour').value = '';
+      if (!nom || montant < 0) return alert('Nom et montant >= 0 requis.');
+      await safeWrite(async () => {
+        await refFixes.push({ nom, montant: round2(montant), jour, paiements: {} });
+        document.getElementById('fixeNom').value = '';
+        document.getElementById('fixeMontant').value = '';
+        document.getElementById('fixeJour').value = '';
+      });
     };
 
-    window.modifierChargeFixe = async (key) => {
-      if (!user) return;
+    window.modifierChargeFixe = (key) => {
       const f = depensesFixes.find(item => item._firebaseKey === key);
       if (!f) return;
-      const s = prompt(`Montant mensuel pour "${f.nom}" (€) :`, (f.montant || 0).toFixed(2));
-      if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val < 0) return alert('Montant invalide.');
-      await refFixes.child(key).update({ montant: round2(val) });
+      const linked = getLinkedDepenseForFixe(f, selectedMonth);
+      const montantCourant = linked ? toNum(linked.montant) : toNum(f.montant);
+      ouvrirModal('Modifier la charge fixe', `
+        <div class="form-group"><label>Nom</label><input type="text" class="input" id="editFixeNom" value="${escapeAttr(f.nom)}" /></div>
+        <div class="form-group"><label>Montant mensuel (€)</label><input type="number" class="input" id="editFixeMontant" step="any" min="0" value="${montantCourant}" /></div>
+        <div class="form-group"><label>Jour prelevement (1-31)</label><input type="number" class="input" id="editFixeJour" min="1" max="31" value="${escapeAttr(f.jour || '')}" /></div>
+        ${linked ? `<p class="muted">Deja cochee payee pour ${formatMoisLabel(selectedMonth)} : la depense associee sera aussi mise a jour.</p>` : ''}
+      `, async () => {
+        const nom = document.getElementById('editFixeNom').value.trim();
+        const montant = toNum(document.getElementById('editFixeMontant').value);
+        const jour = document.getElementById('editFixeJour').value.trim();
+        if (!nom || montant < 0) { alert('Nom et montant >= 0 requis.'); return false; }
+        await safeWrite(async () => {
+          await refFixes.child(key).update({ nom, montant: round2(montant), jour });
+          if (linked) {
+            await refDepenses.child(linked._firebaseKey).update({
+              description: nom + ' (' + formatMoisLabel(selectedMonth) + ')',
+              montant: round2(montant)
+            });
+          }
+        });
+      });
     };
 
     window.basculerPayeFixe = async (key, checked) => {
-      if (!user) return;
       const f = depensesFixes.find(item => item._firebaseKey === key);
       if (!f) return;
 
@@ -1164,163 +1346,211 @@
         if (montantAPayer <= 0) {
           const s = prompt(`Montant paye pour "${f.nom}" ce mois (€) :`);
           if (s === null) { renderFixes(); return; }
-          const val = parseFloat(s.replace(',', '.'));
-          if (isNaN(val) || val <= 0) { alert('Montant invalide.'); renderFixes(); return; }
+          const val = toNum(s);
+          if (val <= 0) { alert('Montant invalide.'); renderFixes(); return; }
           montantAPayer = round2(val);
-          await refFixes.child(key).update({ montant: montantAPayer });
+          await safeWrite(() => refFixes.child(key).update({ montant: montantAPayer }));
         }
-        const datePaiement = selectedMonth === moisActuel() ? dateAujourdhui() : (selectedMonth + '-01');
-        const depRef = refDepenses.push();
-        await depRef.set({
-          description: f.nom + ' (' + formatMoisLabel(selectedMonth) + ')',
-          montant: montantAPayer,
-          categorie: 'Depenses fixes',
-          bucket: 'fixe',
-          fixeKey: key,
-          date: datePaiement
+        await safeWrite(async () => {
+          const depRef = refDepenses.push();
+          await depRef.set({
+            description: f.nom + ' (' + formatMoisLabel(selectedMonth) + ')',
+            montant: montantAPayer,
+            categorie: 'Depenses fixes',
+            bucket: 'fixe',
+            fixeKey: key,
+            date: defaultDateForMonth()
+          });
+          await refFixes.child(key).child('paiements').child(selectedMonth).set(depRef.key);
         });
-        await refFixes.child(key).child('paiements').child(selectedMonth).set(depRef.key);
       } else {
         const depKey = f.paiements && f.paiements[selectedMonth];
         if (!confirm(`Annuler le paiement de "${f.nom}" pour ${formatMoisLabel(selectedMonth)} ?`)) {
           renderFixes();
           return;
         }
-        if (depKey && typeof depKey === 'string') {
-          await refDepenses.child(depKey).remove();
-        }
-        await refFixes.child(key).child('paiements').child(selectedMonth).remove();
+        await safeWrite(async () => {
+          if (depKey && typeof depKey === 'string') {
+            await refDepenses.child(depKey).remove();
+          }
+          await refFixes.child(key).child('paiements').child(selectedMonth).remove();
+        });
       }
     };
 
     window.supprimerChargeFixe = async (key) => {
-      if (!user || !confirm('Supprimer cette charge fixe de la liste ? (Les paiements passes restent dans l\'historique)')) return;
-      await refFixes.child(key).remove();
+      if (!confirm('Supprimer cette charge fixe de la liste ? (Les paiements passes restent dans l\'historique)')) return;
+      await safeWrite(() => refFixes.child(key).remove());
     };
 
-    // Depenses a plafond
+    // Depenses a plafond & Edition depenses
     window.modifierPlafond = async (bucket) => {
-      if (!user) return;
       const nom = bucket === 'vivres' ? 'Vivres, Hygiene & Menage' : 'Sorties & Imprevus';
-      const s = prompt(`Plafond mensuel pour "${nom}" (€) :`, (plafonds[bucket] || 0).toFixed(2));
+      const s = prompt(`Plafond mensuel pour "${nom}" (€) :`, toNum(plafonds[bucket]).toFixed(2));
       if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val < 0) return alert('Montant invalide.');
-      await refPlafonds.child(bucket).set(round2(val));
+      const val = toNum(s);
+      if (val < 0) return alert('Montant invalide.');
+      await safeWrite(() => refPlafonds.child(bucket).set(round2(val)));
     };
 
     window.ajouterDepensePlafond = async (bucket) => {
-      if (!user) return;
       const desc = document.getElementById(bucket + 'Desc').value.trim();
-      const montant = parseFloat(document.getElementById(bucket + 'Montant').value);
-      const date = document.getElementById(bucket + 'Date').value || dateAujourdhui();
-      if (!desc || isNaN(montant) || montant <= 0) return alert('Description et montant > 0 requis.');
-      const categorie = bucket === 'vivres' ? 'Vivres & Consommables' : 'Sorties & Imprevus';
-      await refDepenses.push({ description: desc, montant: round2(montant), categorie, bucket, date });
-      document.getElementById(bucket + 'Desc').value = '';
-      document.getElementById(bucket + 'Montant').value = '';
-      document.getElementById(bucket + 'Date').value = dateAujourdhui();
+      const montant = toNum(document.getElementById(bucket + 'Montant').value);
+      const date = document.getElementById(bucket + 'Date').value || defaultDateForMonth();
+      if (!desc || montant <= 0) return alert('Description et montant > 0 requis.');
+      const categorie = labelCategoriePourBucket(bucket);
+      await safeWrite(async () => {
+        await refDepenses.push({ description: desc, montant: round2(montant), categorie, bucket, date });
+        document.getElementById(bucket + 'Desc').value = '';
+        document.getElementById(bucket + 'Montant').value = '';
+        document.getElementById(bucket + 'Date').value = defaultDateForMonth();
+      });
+    };
+
+    window.modifierDepense = (key) => {
+      const d = depenses.find(item => item._firebaseKey === key);
+      if (!d) return;
+      const b = getBucketDepense(d);
+      ouvrirModal('Modifier cette depense', `
+        <div class="form-group"><label>Description</label><input type="text" class="input" id="editDepDesc" value="${escapeAttr(d.description)}" /></div>
+        <div class="form-group"><label>Montant (€)</label><input type="number" class="input" id="editDepMontant" step="any" min="0.01" value="${toNum(d.montant)}" /></div>
+        <div class="form-group">
+          <label>Affectation</label>
+          <select class="select" id="editDepBucket">
+            <option value="vivres" ${b === 'vivres' ? 'selected' : ''}>Vivres, Hygiene &amp; Menage</option>
+            <option value="sorties" ${b === 'sorties' ? 'selected' : ''}>Sorties &amp; Imprevus</option>
+            <option value="fixe" ${b === 'fixe' ? 'selected' : ''}>Depenses fixes</option>
+            <option value="cagnotte" ${b === 'cagnotte' ? 'selected' : ''}>Cagnotte / Wish List</option>
+            <option value="autre" ${b === 'autre' ? 'selected' : ''}>Autre</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Date</label><input type="date" class="input" id="editDepDate" value="${escapeAttr(d.date || defaultDateForMonth())}" /></div>
+      `, async () => {
+        const description = document.getElementById('editDepDesc').value.trim();
+        const montant = toNum(document.getElementById('editDepMontant').value);
+        const bucket = document.getElementById('editDepBucket').value;
+        const date = document.getElementById('editDepDate').value || defaultDateForMonth();
+        if (!description || montant <= 0) { alert('Description et montant > 0 requis.'); return false; }
+        await safeWrite(() => refDepenses.child(key).update({
+          description,
+          montant: round2(montant),
+          bucket,
+          categorie: labelCategoriePourBucket(bucket),
+          date
+        }));
+      });
     };
 
     window.supprimerDepense = async (key) => {
-      if (!user || !confirm('Supprimer cette depense ?')) return;
-      await refDepenses.child(key).remove();
+      if (!confirm('Supprimer cette depense ?')) return;
+      await safeWrite(async () => {
+        await refDepenses.child(key).remove();
+        // Si cette depense etait liee a une charge fixe payee, on decoche la charge fixe correspondante
+        for (const f of depensesFixes) {
+          if (f.paiements) {
+            for (const [ym, depKey] of Object.entries(f.paiements)) {
+              if (depKey === key) {
+                await refFixes.child(f._firebaseKey).child('paiements').child(ym).remove();
+              }
+            }
+          }
+        }
+      });
     };
 
     // Inventaire & Courses
     window.ajouterInventaire = async () => {
-      if (!user) return;
       const nom = document.getElementById('invNom').value.trim();
       const zone = document.getElementById('invZone').value;
       const statut = document.getElementById('invStatut').value;
       if (!nom) return alert('Nom du produit requis.');
-      await refInventaire.push({ nom, zone, statut });
-      document.getElementById('invNom').value = '';
+      await safeWrite(async () => {
+        await refInventaire.push({ nom, zone, statut });
+        document.getElementById('invNom').value = '';
+      });
     };
     window.cyclerStatutInventaire = async (key) => {
-      if (!user) return;
       const item = inventaire.find(i => i._firebaseKey === key);
       if (!item) return;
       const next = item.statut === 'ok' ? 'bas' : (item.statut === 'bas' ? 'epuise' : 'ok');
-      await refInventaire.child(key).update({ statut: next });
+      await safeWrite(() => refInventaire.child(key).update({ statut: next }));
     };
     window.envoyerVersCourses = async (key) => {
-      if (!user) return;
       const item = inventaire.find(i => i._firebaseKey === key);
       if (!item) return;
-      if (courses.some(c => c.nom.toLowerCase() === item.nom.toLowerCase() && !c.coche)) {
+      if (courses.some(c => String(c.nom || '').toLowerCase() === String(item.nom || '').toLowerCase() && !c.coche)) {
         return alert(`"${item.nom}" est deja dans la liste de courses.`);
       }
       const horizon = item.zone === 'Hygiene & Menage' ? 'mois' : 'semaine';
-      await refCourses.push({ nom: item.nom, quantite: '1', horizon, coche: false, inventaireKey: key });
+      await safeWrite(() => refCourses.push({ nom: item.nom, quantite: '1', horizon, coche: false, inventaireKey: key }));
     };
     window.supprimerInventaire = async (key) => {
-      if (!user || !confirm('Retirer ce produit ?')) return;
-      await refInventaire.child(key).remove();
+      if (!confirm('Retirer ce produit ?')) return;
+      await safeWrite(() => refInventaire.child(key).remove());
     };
     window.ajouterCourse = async () => {
-      if (!user) return;
       const nom = document.getElementById('courseNom').value.trim();
       const quantite = document.getElementById('courseQte').value.trim();
       const horizon = document.getElementById('courseHorizon').value;
       if (!nom) return alert('Article requis.');
-      await refCourses.push({ nom, quantite, horizon, coche: false, inventaireKey: '' });
-      document.getElementById('courseNom').value = '';
-      document.getElementById('courseQte').value = '';
+      await safeWrite(async () => {
+        await refCourses.push({ nom, quantite, horizon, coche: false, inventaireKey: '' });
+        document.getElementById('courseNom').value = '';
+        document.getElementById('courseQte').value = '';
+      });
     };
     window.basculerCourse = async (key, checked) => {
-      if (!user) return;
-      await refCourses.child(key).update({ coche: checked });
+      await safeWrite(() => refCourses.child(key).update({ coche: checked }));
     };
     window.supprimerCourse = async (key) => {
-      if (!user) return;
-      await refCourses.child(key).remove();
+      await safeWrite(() => refCourses.child(key).remove());
     };
     window.validerCoursesCochees = async () => {
-      if (!user) return;
       const coches = courses.filter(c => c.coche);
       if (coches.length === 0) return alert('Cochez d\'abord les articles achetes.');
-      const depVivres = round2(getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + (parseFloat(d.montant) || 0), 0));
-      const restePlafond = round2((plafonds.vivres || 0) - depVivres);
-      const ticket = prompt(`${coches.length} article(s) remis "En stock".\nReste plafond Vivres : ${formatMontant(restePlafond)}\n\nMontant du ticket de caisse (€) a ajouter au plafond Vivres ?\n(Laissez vide pour ne pas creer de depense)`);
+      const depVivres = round2(getDepensesBucketMois('vivres', selectedMonth).reduce((s, d) => s + toNum(d.montant), 0));
+      const restePlafond = round2(toNum(plafonds.vivres) - depVivres);
+      const ticket = prompt(`${coches.length} article(s) remis "En stock".\nReste plafond Vivres (${formatMoisLabel(selectedMonth)}) : ${formatMontant(restePlafond)}\n\nMontant du ticket de caisse (€) a ajouter au plafond Vivres ?\n(Laissez vide pour ne pas creer de depense)`);
       if (ticket === null) return;
 
-      for (const c of coches) {
-        const invMatch = inventaire.find(i => i._firebaseKey === c.inventaireKey || i.nom.toLowerCase() === c.nom.toLowerCase());
-        if (invMatch) await refInventaire.child(invMatch._firebaseKey).update({ statut: 'ok' });
-        await refCourses.child(c._firebaseKey).remove();
-      }
-      if (ticket.trim() !== '') {
-        const val = parseFloat(ticket.replace(',', '.'));
-        if (!isNaN(val) && val > 0) {
-          await refDepenses.push({
-            description: 'Courses (' + coches.length + ' articles)',
-            montant: round2(val),
-            categorie: 'Vivres & Consommables',
-            bucket: 'vivres',
-            date: dateAujourdhui()
-          });
+      await safeWrite(async () => {
+        for (const c of coches) {
+          const invMatch = inventaire.find(i => i._firebaseKey === c.inventaireKey || String(i.nom || '').toLowerCase() === String(c.nom || '').toLowerCase());
+          if (invMatch) await refInventaire.child(invMatch._firebaseKey).update({ statut: 'ok' });
+          await refCourses.child(c._firebaseKey).remove();
         }
-      }
+        if (ticket.trim() !== '') {
+          const val = toNum(ticket);
+          if (val > 0) {
+            await refDepenses.push({
+              description: 'Courses (' + coches.length + ' articles)',
+              montant: round2(val),
+              categorie: 'Vivres & Consommables',
+              bucket: 'vivres',
+              date: defaultDateForMonth()
+            });
+          }
+        }
+      });
     };
 
     // Cagnottes
     window.ajouterCagnotte = async () => {
-      if (!user) return;
       const nom = document.getElementById('cagNom').value.trim();
       const type = document.getElementById('cagType').value;
-      const objectif = parseFloat(document.getElementById('cagObjectif').value) || 0;
-      const init = parseFloat(document.getElementById('cagInit').value) || 0;
+      const objectif = toNum(document.getElementById('cagObjectif').value);
+      const init = toNum(document.getElementById('cagInit').value);
       if (!nom) return alert('Nom requis.');
       if (type === 'wishlist' && objectif <= 0) return alert('Indiquez un prix objectif > 0 pour une Wish List.');
-      await refCagnottes.push({ nom, type, objectif: round2(objectif), montantDepose: round2(init), achete: false, dateAchat: '' });
-      document.getElementById('cagNom').value = '';
-      document.getElementById('cagObjectif').value = '';
-      document.getElementById('cagInit').value = '0';
+      await safeWrite(async () => {
+        await refCagnottes.push({ nom, type, objectif: round2(objectif), montantDepose: round2(init), achete: false, dateAchat: '' });
+        document.getElementById('cagNom').value = '';
+        document.getElementById('cagObjectif').value = '';
+        document.getElementById('cagInit').value = '0';
+      });
     };
 
     window.mouvementCagnotte = async (key, signe) => {
-      if (!user) return;
       const c = cagnottes.find(item => item._firebaseKey === key);
       if (!c) return;
       const libre = getResteLibre();
@@ -1329,69 +1559,83 @@
         : `Retirer de "${c.nom}" (Actuellement depose : ${formatMontant(c.montantDepose)})\nMontant a retirer (€) :`;
       const s = prompt(msg);
       if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
-      const nouveau = round2((parseFloat(c.montantDepose) || 0) + signe * val);
+      const val = toNum(s);
+      if (val <= 0) return alert('Montant invalide.');
+      const nouveau = round2(toNum(c.montantDepose) + signe * val);
       if (nouveau < 0) return alert('Impossible de retirer plus que le montant depose.');
-      await refCagnottes.child(key).update({ montantDepose: nouveau });
+      await safeWrite(() => refCagnottes.child(key).update({ montantDepose: nouveau }));
     };
 
     window.acheterCagnotte = async (key) => {
-      if (!user) return;
       const c = cagnottes.find(item => item._firebaseKey === key);
       if (!c) return;
-      const defPrix = (c.objectif > 0 ? c.objectif : c.montantDepose) || 0;
+      const defPrix = (toNum(c.objectif) > 0 ? toNum(c.objectif) : toNum(c.montantDepose)) || 0;
       const s = prompt(`Acheter "${c.nom}" ?\nDepose dans la cagnotte : ${formatMontant(c.montantDepose)}\nConfirmez le prix reel paye (€) :`, defPrix.toFixed(2));
       if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val <= 0) return alert('Montant invalide.');
-      const auj = dateAujourdhui();
-      await refDepenses.push({ description: c.nom, montant: round2(val), categorie: 'Cagnotte / Wish List', bucket: 'cagnotte', date: auj });
-      await refCagnottes.child(key).update({ achete: true, prixReel: round2(val), dateAchat: auj });
+      const val = toNum(s);
+      if (val <= 0) return alert('Montant invalide.');
+      const d = defaultDateForMonth();
+      await safeWrite(async () => {
+        await refDepenses.push({ description: c.nom, montant: round2(val), categorie: 'Cagnotte / Wish List', bucket: 'cagnotte', date: d });
+        await refCagnottes.child(key).update({ achete: true, prixReel: round2(val), dateAchat: d });
+      });
     };
 
-    window.modifierCagnotte = async (key) => {
-      if (!user) return;
+    window.modifierCagnotte = (key) => {
       const c = cagnottes.find(item => item._firebaseKey === key);
       if (!c) return;
-      const s = prompt(`Nouvel objectif (€) pour "${c.nom}" (0 = libre) :`, (c.objectif || 0).toFixed(2));
-      if (s === null) return;
-      const val = parseFloat(s.replace(',', '.'));
-      if (isNaN(val) || val < 0) return alert('Valeur invalide.');
-      await refCagnottes.child(key).update({ objectif: round2(val) });
+      ouvrirModal('Modifier la cagnotte', `
+        <div class="form-group"><label>Nom</label><input type="text" class="input" id="editCagNom" value="${escapeAttr(c.nom)}" /></div>
+        <div class="form-group">
+          <label>Type</label>
+          <select class="select" id="editCagType">
+            <option value="wishlist" ${c.type === 'wishlist' ? 'selected' : ''}>Wish List (Achat)</option>
+            <option value="epargne" ${c.type === 'epargne' ? 'selected' : ''}>Economies / Livret A</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Objectif (€, 0 = libre)</label><input type="number" class="input" id="editCagObj" step="any" min="0" value="${toNum(c.objectif)}" /></div>
+        <div class="form-group"><label>Montant depose (€)</label><input type="number" class="input" id="editCagDep" step="any" min="0" value="${toNum(c.montantDepose)}" /></div>
+      `, async () => {
+        const nom = document.getElementById('editCagNom').value.trim();
+        const type = document.getElementById('editCagType').value;
+        const objectif = toNum(document.getElementById('editCagObj').value);
+        const montantDepose = toNum(document.getElementById('editCagDep').value);
+        if (!nom || objectif < 0 || montantDepose < 0) { alert('Valeurs invalides.'); return false; }
+        await safeWrite(() => refCagnottes.child(key).update({ nom, type, objectif: round2(objectif), montantDepose: round2(montantDepose) }));
+      });
     };
 
     window.supprimerCagnotte = async (key) => {
-      if (!user || !confirm('Supprimer cette cagnotte ?')) return;
-      await refCagnottes.child(key).remove();
+      if (!confirm('Supprimer cette cagnotte ?')) return;
+      await safeWrite(() => refCagnottes.child(key).remove());
     };
 
-    // Dettes (inchange)
+    // Dettes
     window.ajouterPret = async () => {
-      if (!user) return;
       const motif = document.getElementById('pretMotif').value.trim();
-      const total = parseFloat(document.getElementById('pretMontant').value);
-      const remb = parseFloat(document.getElementById('pretRembourse').value) || 0;
-      if (!motif || isNaN(total) || total <= 0) return alert('Motif et montant total > 0 requis.');
+      const total = toNum(document.getElementById('pretMontant').value);
+      const remb = toNum(document.getElementById('pretRembourse').value);
+      if (!motif || total <= 0) return alert('Motif et montant total > 0 requis.');
       if (remb < 0 || remb > total) return alert('Remboursement entre 0 et total.');
-      await refPrets.push({ motif, montantTotal: round2(total), montantRembourse: round2(remb) });
-      document.getElementById('pretMotif').value = '';
-      document.getElementById('pretMontant').value = '';
-      document.getElementById('pretRembourse').value = '0';
+      await safeWrite(async () => {
+        await refPrets.push({ motif, montantTotal: round2(total), montantRembourse: round2(remb) });
+        document.getElementById('pretMotif').value = '';
+        document.getElementById('pretMontant').value = '';
+        document.getElementById('pretRembourse').value = '0';
+      });
     };
     window.supprimerPret = async (key) => {
-      if (!user || !confirm('Supprimer ce pret ?')) return;
-      await refPrets.child(key).remove();
+      if (!confirm('Supprimer ce pret ?')) return;
+      await safeWrite(() => refPrets.child(key).remove());
     };
     window.modifierRemboursementPret = async (key) => {
-      if (!user) return;
       const p = prets.find(item => item._firebaseKey === key);
       if (!p) return;
-      const nv = prompt('Pret : ' + p.motif + '\nTotal : ' + formatMontant(p.montantTotal) + '\nNouveau rembourse :', (p.montantRembourse || 0).toFixed(2));
+      const nv = prompt('Pret : ' + p.motif + '\nTotal : ' + formatMontant(p.montantTotal) + '\nNouveau rembourse :', toNum(p.montantRembourse).toFixed(2));
       if (nv === null) return;
-      const val = parseFloat(nv.replace(',', '.'));
-      if (isNaN(val) || val < 0 || val > p.montantTotal) return alert('Valeur invalide.');
-      await refPrets.child(key).update({ montantRembourse: round2(val) });
+      const val = toNum(nv);
+      if (val < 0 || val > toNum(p.montantTotal)) return alert('Valeur invalide.');
+      await safeWrite(() => refPrets.child(key).update({ montantRembourse: round2(val) }));
     };
 
     // Theme & Navigation
@@ -1403,7 +1647,7 @@
     window.toggleTheme = async () => {
       currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
       applyTheme();
-      if (user) await refTheme.set(currentTheme);
+      if (user) await safeWrite(() => refTheme.set(currentTheme));
     };
     window.switchTab = (name) => {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel--active'));
@@ -1447,22 +1691,24 @@
           const data = JSON.parse(e.target.result);
           if (!data.revenus || !data.depenses || !data.prets) return alert('Fichier JSON invalide.');
           if (!confirm('Ceci va remplacer vos donnees actuelles. Continuer ?')) return;
-          const sets = [
-            [refRevenus, data.revenus],
-            [refDepenses, data.depenses],
-            [refFixes, data.depensesFixes],
-            [refCagnottes, data.cagnottes],
-            [refInventaire, data.inventaire],
-            [refCourses, data.courses],
-            [refPrets, data.prets]
-          ];
-          for (const [ref, arr] of sets) {
-            if (Array.isArray(arr)) {
-              await ref.set(null);
-              for (const item of arr) await ref.push(item);
+          await safeWrite(async () => {
+            const sets = [
+              [refRevenus, data.revenus],
+              [refDepenses, data.depenses],
+              [refFixes, data.depensesFixes],
+              [refCagnottes, data.cagnottes],
+              [refInventaire, data.inventaire],
+              [refCourses, data.courses],
+              [refPrets, data.prets]
+            ];
+            for (const [ref, arr] of sets) {
+              if (Array.isArray(arr)) {
+                await ref.set(null);
+                for (const item of arr) await ref.push(item);
+              }
             }
-          }
-          if (data.plafonds) await refPlafonds.set(data.plafonds);
+            if (data.plafonds) await refPlafonds.set(data.plafonds);
+          });
           alert('Donnees importees avec succes !');
         } catch (err) {
           alert('Erreur de lecture : ' + err.message);
@@ -1495,15 +1741,15 @@
       XLSX.writeFile(wb, 'Espace_Budget_' + dateAujourdhui() + '.xlsx');
     };
 
-    // Init
+    // Init & raccourcis
     document.addEventListener('DOMContentLoaded', () => {
-      const auj = dateAujourdhui();
       document.getElementById('monthPicker').value = selectedMonth;
-      document.getElementById('revDate').value = auj;
-      document.getElementById('vivresDate').value = auj;
-      document.getElementById('sortiesDate').value = auj;
+      syncDateInputsToMonth();
       document.getElementById('loginPassword').addEventListener('keydown', e => {
         if (e.key === 'Enter') window.authentifier();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') window.fermerModal();
       });
     });
   </script>
